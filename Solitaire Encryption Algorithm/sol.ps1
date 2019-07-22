@@ -1,18 +1,18 @@
-# $ht.GetEnumerator() | Sort-Object {Get-Random}
+$a = [ordered] @{}  # for debug shifting
 
-$keys = @()
-foreach ($suit in @('+', '#', '*', '^'))
-{
-    $keys += @('A') + 2..10 + @('J', 'Q', 'K') | ForEach-Object {
-        if ($_.ToString().Length -lt 2) {$_.ToString() + ' ' + $suit} else {$_.ToString() + '' + $suit}
-    }
-}
+# $edge = 9  # 52
+$deck = 1..9 + @('A', 'B')  # JockerA (black)= $edge scores, JockerB (red)= 0 scores
+$deck = $deck | Sort-Object {Get-Random}
+$a.Add(1, ($deck -join ' ' ))
 
-$deck = [ordered] @{
-    'Jocker_A_Black' = 53
-    'Jocker_B_Red'   = 54
-}
+$jA = if ($deck.IndexOf('A') + 1 -eq $deck.Length - 1) {($deck.IndexOf('A') + 1) % ($deck.Length - 0)} else {($deck.IndexOf('A') + 1) % ($deck.Length - 1)}
+$part = $deck -ne 'A'  # колода без джокера A
+$deck = $part[0..($jA - 1)] + @('A') + @($part | ForEach-Object {if ($_ -notin $part[0..($jA - 1)]) {$_}})
+$a.Add(2, ($deck -join ' ' ))
 
-foreach ($key in $keys) { $deck[$key] = $keys.IndexOf($key) + 1 }
+$jB = if ($deck.IndexOf('B') + 2 -eq $deck.Length - 1) {($deck.IndexOf('B') + 1) % ($deck.Length - 0)} else {($deck.IndexOf('B') + 2) % ($deck.Length - 1)}
+$part = $deck -ne 'B'  # колода без джокера B
+$deck = $part[0..($jB - 1)] + @('B') + @($part | ForEach-Object {if ($_ -notin $part[0..($jB - 1)]) {$_}})
+$a.Add(3, ($deck -join ' ' ))
 
-$deck.GetEnumerator() | Sort-Object {Get-Random}
+$a

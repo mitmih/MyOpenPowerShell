@@ -1,3 +1,34 @@
+$abc = [ordered] @{
+    1  = 'A'
+    2  = 'B'
+    3  = 'C'
+    4  = 'D'
+    5  = 'E'
+    6  = 'F'
+    7  = 'G'
+    8  = 'H'
+    9  = 'I'
+    10 = 'J'
+    11 = 'K'
+    12 = 'L'
+    13 = 'M'
+    14 = 'N'
+    15 = 'O'
+    16 = 'P'
+    17 = 'Q'
+    18 = 'R'
+    19 = 'S'
+    20 = 'T'
+    21 = 'U'
+    22 = 'V'
+    23 = 'W'
+    24 = 'X'
+    25 = 'Y'
+    26 = 'Z'
+}
+
+
+
 function Move-JockersDirty {
     param ($deck)
 
@@ -73,6 +104,40 @@ function Split-CountCut {
 }
 
 # function Convert-JockerToValue {
-#     param ($deck)
+#     param ($card)
+    
+#     if ($card -eq 'A' -or $card -eq 'B') {$first = $key.Length - 1} else {$first = $card}
 #     # 
 # }
+
+function Clear-OpenText {
+    param ([string] $text)
+    
+    $text = $text.ToUpper()
+    $text = $text -replace '[^A-Z]', ''
+    
+    return $text
+}
+
+function Split-ClassicView {
+    param ([string] $text)
+    
+    while ($text.Length % 5 -ne 0) {
+        $text += 'X'
+    }
+    
+    $split = ''
+    for ($i = 0; $i -lt $text.Length; $i+= 5) {
+        $split += ($text[($i)..($i + 4)] -join '') + ' '
+    }
+    
+    return $split
+}
+
+function ConvertTo-Encrypted {
+    param ([string] $text)
+    
+    
+    
+    return $null
+}

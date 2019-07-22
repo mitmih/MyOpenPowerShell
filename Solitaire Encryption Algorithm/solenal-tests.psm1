@@ -16,10 +16,10 @@ function Test-EncryptDecrypt {
     
     if ($null -ne $test[$false])
     {
-        return "- test FAILED`nfailed gamma`t" + ($test[$false] -join ' ') + "`n" + "passed gamma`t" + ($test[$true] -join ' ') + "`n"
+        return "`n- test FAILED`nfailed gamma`t" + ($test[$false] -join ' ') + "`n" + "passed gamma`t" + ($test[$true] -join ' ') + "`n"
     }
     else
     {
-        return "+ test PASSED`n"
+        return "`n+ test PASSED`n"
     }
 }

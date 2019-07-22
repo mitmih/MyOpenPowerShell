@@ -166,7 +166,7 @@ function Clear-OpenText {
     $text = $text -replace '[^A-Z]', ''
     
     while ($text.Length % 5 -ne 0) {
-        $text += 'Z'
+        $text += 'X'
     }
     
     return $text
@@ -224,4 +224,14 @@ function ConvertTo-Decrypted {
     }
     
     return $result
+}
+
+function ConvertFrom-NumbersToLetters {  # для перевода ключевого потока в буквы
+    param ($KeyStream)
+    
+    $KeyStreamLetters = @()
+
+    foreach ($k in $KeyStream) { $KeyStreamLetters += $LetterByValue[$k] }
+    
+    return $KeyStreamLetters
 }

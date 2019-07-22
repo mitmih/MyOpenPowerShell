@@ -4,35 +4,6 @@ Set-Location "$($MyInvocation.MyCommand.Definition | Split-Path -Parent)"
 
 Import-Module '.\solenal-helpers.psm1' -Force
 
-$abc = [ordered] @{
-    1  = 'a'
-    2  = 'b'
-    3  = 'c'
-    4  = 'd'
-    5  = 'e'
-    6  = 'f'
-    7  = 'g'
-    8  = 'h'
-    9  = 'i'
-    10 = 'j'
-    11 = 'k'
-    12 = 'l'
-    13 = 'm'
-    14 = 'n'
-    15 = 'o'
-    16 = 'p'
-    17 = 'q'
-    18 = 'r'
-    19 = 's'
-    20 = 't'
-    21 = 'u'
-    22 = 'v'
-    23 = 'w'
-    24 = 'x'
-    25 = 'y'
-    26 = 'z'
-}
-
 $dbg = [ordered] @{}
 
 function Get-KeyStream {
@@ -47,19 +18,19 @@ function Get-KeyStream {
     {
         # step 1 - move jocker A
         $key = Move-Jocker -deck $key.Split(' ') -jocker 'A' -shift 1
-        $dbg.add("step1, move A $($i+1)", ($Key -join ' '))
+        $dbg.add("step1, move A $($i+1)", ($Key -join ' '))  # for debug
         
         # step 2 - move jocker B
         $key = Move-Jocker -deck $key.Split(' ') -jocker 'B' -shift 2
-        $dbg.add("step2, move B $($i+1)", ($Key -join ' '))
+        $dbg.add("step2, move B $($i+1)", ($Key -join ' '))  # for debug
         
         # step 3 - swap the cards above the first joker with the cards below the second joker
         $key = Split-TripleCut -deck $key
-        $dbg.add("step3, Triple Cut $($i+1)", ($Key -join ' '))
+        $dbg.add("step3, Triple Cut $($i+1)", ($Key -join ' '))  # for debug
         
         # step 4 - cut after the counted card
         $key = Split-CountCut -deck $key
-        $dbg.add("step4, Count Cut $($i+1)", ($Key -join ' '))
+        $dbg.add("step4, Count Cut $($i+1)", ($Key -join ' '))  # for debug
         
         
         # step 5 - find the output card (look at the top card, count down the number, next card after last counted will be the OUTPUT)
@@ -75,14 +46,27 @@ function Get-KeyStream {
     return $KeyStream
 }
 
+function FunctionName {
+    param ($OptionalParameters)
+    # 
+}
 
-# $Key = (1..9 + @('A', 'B') | Sort-Object {Get-Random}) -join ' '
+# $Key = (1..9 + @('A', 'B') | Sort-Object {Get-Random}) -join ' ' #; $Key
 # $Key = 'B 2 9 1 4 6 8 7 5 3 A'.Split(' ')
 $Key = 'B A 9 1 2 3 4 5 6 7 8'.Split(' ')
-# $Key
-$dbg.add('init:', ($Key -join ' '))
+$dbg.add('init:', ($Key -join ' '))  # for debug
 
+# получаем нужное количество чисел ключевого потока из расчёта один символ открытого текста - одно число ключевого потока
 $KeyStream = Get-KeyStream -length 5 -key $Key
 
 $dbg
 $KeyStream -join ' '
+
+$OpenText = Clear-OpenText -text 'Do Not use PC friend'
+Split-ClassicView -text $OpenText
+
+
+
+
+
+

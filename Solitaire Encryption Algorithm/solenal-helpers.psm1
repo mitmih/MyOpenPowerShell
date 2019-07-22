@@ -166,7 +166,7 @@ function Clear-OpenText {
     $text = $text -replace '[^A-Z]', ''
     
     while ($text.Length % 5 -ne 0) {
-        $text += 'X'
+        $text += 'Z'
     }
     
     return $text
@@ -189,12 +189,19 @@ function ConvertTo-Encrypted {
         [int[]]$KeyStream
     )
     
+    
     $result = ''
-    for ($i = 0; $i -lt $text.Length; $i++) {
-        # $val = ($ValueByLetter[ [string] $text[$i] ] + $KeyStream[$i])
-        $val = ($abc.IndexOf([string] $text[$i]) + $KeyStream[$i]) % 26
-        # if ($val -gt 26) { $val = $val % 26 }
-        $result += $abc[$val]
+    
+    for ($i = 0; $i -lt $text.Length; $i++)
+    {
+        $val = ($ValueByLetter[ [string] $text[$i] ] + $KeyStream[$i] % 26)
+        
+        if ($val -gt 26) { $val %= 26 }
+        
+        $result += $LetterByValue[$val]
+        
+        # $val = ($abc.IndexOf([string] $text[$i]) + $KeyStream[$i]) % 26
+        # $result += $abc[$val]
     }
     
     return $result
@@ -206,14 +213,17 @@ function ConvertTo-Decrypted {
         [int[]]$KeyStream
     )
     
+    
     $result = ''
-    for ($i = 0; $i -lt $text.Length; $i++) {
-        # $val = ($ValueByLetter[ [string] $text[$i] ] - ($KeyStream[$i] % 26) + 26) % 26
-        # $result += $LetterByValue[$val]
-        $val = ($abc.IndexOf([string] $text[$i]) - $KeyStream[$i] + 26) % 26
-        # if ($val -gt 26) { $val = $val % 26 }
-        $result += $abc[$val]
-
+    
+    for ($i = 0; $i -lt $text.Length; $i++)
+    {
+        $val = ($ValueByLetter[ [string] $text[$i] ] - $KeyStream[$i] % 26)
+        
+        if ($val -le 0) { $val += 26 }
+        
+        $result += $LetterByValue[$val]
+        
     }
     
     return $result

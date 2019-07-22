@@ -51,22 +51,40 @@ function FunctionName {
     # 
 }
 
-$Key = (1..52 + @('A', 'B') | Sort-Object {Get-Random}) -join ' ' #; $Key
-# $Key = '52 2 28 24 26 20 3 21 10 32 7 37 31 42 17 4 11 30 A 12 16 49 34 25 15 45 5 51 47 48 8 22 6 50 39 43 B 18 1 46 27 33 35 40 13 19 36 14 41 9 29 44 38 23'.Split(' ')
+# $Key = (1..52 + @('A', 'B') | Sort-Object {Get-Random}) -join ' ' #; $Key
+$Key = '52 2 28 24 26 20 3 21 10 32 7 37 31 42 17 4 11 30 A 12 16 49 34 25 15 45 5 51 47 48 8 22 6 50 39 43 B 18 1 46 27 33 35 40 13 19 36 14 41 9 29 44 38 23'.Split(' ')
 # $Key = 'B 2 9 1 4 6 8 7 5 3 A'.Split(' ')
 # $Key = 'B A 9 1 2 3 4 5 6 7 8'.Split(' ')
 $dbg.add('init:', ($Key -join ' '))  # for debug
 
 # готовим открытый текст - преобразуем в ПРОПИСНЫЕ, оставляем только буквы, дополняем X-ами до кратности 5
 # $OpenText = Clear-OpenText -text 'Do Not use PC friend'
-$OpenText = Clear-OpenText -text 'abcdefghijklmnopqrstuvwxyz'
-# $OpenText
+$OpenText = Clear-OpenText -text 'Zabcdefghijklmnopqrstuvwxyz'
 
 # получаем нужное количество чисел ключевого потока из расчёта один символ открытого текста - одно число ключевого потока
 $KeyStream = Get-KeyStream -length $OpenText.Length -key $Key
+$KeyStream -join ' '
 
 $EncryptedText = ConvertTo-Encrypted -KeyStream $KeyStream -text $OpenText
 $DecryptedText = ConvertTo-Decrypted -KeyStream $KeyStream -text $EncryptedText
+
+function Test-EncryptDecrypt {
+    param ($text)
+    
+    $test = [ordered] @{'-1' = 'tested'}
+    for ($i = 0; $i -lt 55; $i++) {
+        $gamma = ("$i " * $text.Length).Trim().Split(' ')
+        
+        $enc = ConvertTo-Encrypted -KeyStream $gamma -text $text
+        $dec = ConvertTo-Decrypted -KeyStream $gamma -text $enc
+
+        if ($text -ne $dec) {$test.add( '' + $gamma[0] + '', 'failed')}
+    }
+    
+    return $test 
+}
+
+Test-EncryptDecrypt -text (Clear-OpenText -text 'abcdefghijklmnopqrstuvwxyz')
 
 Split-ClassicView -text $OpenText
 Split-ClassicView -text $EncryptedText
@@ -74,6 +92,6 @@ Split-ClassicView -text $DecryptedText
 
 # $dbg
 # $dbg[0]
-$KeyStream -join ' '
+# $KeyStream -join ' '
 
 

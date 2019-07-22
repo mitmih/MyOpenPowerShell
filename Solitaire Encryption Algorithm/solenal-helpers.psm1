@@ -183,6 +183,19 @@ function Split-ClassicView {
     return $split
 }
 
+function Split-ClassicViewKeyStream {
+    param ($KeyStream)
+    
+    $c1 = '_'
+    $c2 = '  '
+    $split = ''
+    for ($i = 0; $i -lt $KeyStream.Length; $i+= 5) {
+        $split += ($KeyStream[($i)..($i + 4)] -join $c1) + $c2
+    }
+    
+    return $split
+}
+
 function ConvertTo-Encrypted {
     param (
         [string] $text,

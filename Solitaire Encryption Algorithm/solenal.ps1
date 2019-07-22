@@ -86,15 +86,12 @@ $DecryptedText = ConvertTo-Decrypted -KeyStream $KeyStream -text $EncryptedText
 
 
 
-$DebugText.Add('Key Stream, numbers', $KeyStream -join ' ')
-$DebugText.Add('Source text', (Split-ClassicView -text $SourceText))
-$DebugText.Add(' ', "+")
-$DebugText.Add('Key Stream ', (Split-ClassicView -text ((ConvertFrom-NumbersToLetters -KeyStream $KeyStream) -join '')))
-$DebugText.Add('= Encrypted text', (Split-ClassicView -text $EncryptedText))
-$DebugText.Add('  ', "-")
-$DebugText.Add('Key Stream  ', (Split-ClassicView -text ((ConvertFrom-NumbersToLetters -KeyStream $KeyStream) -join '')))
-$DebugText.Add('= Decrypted text', (Split-ClassicView -text $DecryptedText))
+# $DebugText.Add('Key Stream, numbers', $KeyStream -join ' ')
 
-# $DebugKeyStream
+# $DebugText
 Test-EncryptDecrypt -text (Clear-OpenText -text 'abcdefghijklmnopqrstuvwxyz')
-$DebugText
+Write-Host "Source text`t", (Split-ClassicView -text $SourceText)
+Write-Host "Encrypted text`t", (Split-ClassicView -text $EncryptedText)
+Write-Host "Decrypted text`t", (Split-ClassicView -text $DecryptedText)
+Write-Host "Key Stream`t", (Split-ClassicView -text ((ConvertFrom-NumbersToLetters -KeyStream $KeyStream) -join '')).Tolower()
+Write-Host "`t`t", (Split-ClassicViewKeyStream -KeyStream $KeyStream)

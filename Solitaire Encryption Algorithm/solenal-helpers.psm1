@@ -56,49 +56,6 @@ $ValueByLetter = @{
     'Z' = 26
 }
 
-$abc = @(
-    'A'
-    'B'
-    'C'
-    'D'
-    'E'
-    'F'
-    'G'
-    'H'
-    'I'
-    'J'
-    'K'
-    'L'
-    'M'
-    'N'
-    'O'
-    'P'
-    'Q'
-    'R'
-    'S'
-    'T'
-    'U'
-    'V'
-    'W'
-    'X'
-    'Y'
-    'Z'
-)
-
-function Move-JockersDirty {
-    param ($deck)
-
-    $iA = if ($deck.IndexOf('A') + 1 -eq $deck.Length - 1) {($deck.IndexOf('A') + 1) % ($deck.Length - 0)} else {($deck.IndexOf('A') + 1) % ($deck.Length - 1)}
-    $part = $deck -ne 'A'  # колода без джокера A
-    $deck = $part[0..($iA - 1)] + @('A') + @($part | ForEach-Object {if ($_ -notin $part[0..($iA - 1)]) {$_}})
-
-    $iB = if ($deck.IndexOf('B') + 2 -eq $deck.Length - 1) {($deck.IndexOf('B') + 1) % ($deck.Length - 0)} else {($deck.IndexOf('B') + 2) % ($deck.Length - 1)}
-    $part = $deck -ne 'B'  # колода без джокера B
-    $deck = $part[0..($iB - 1)] + @('B') + @($part | ForEach-Object {if ($_ -notin $part[0..($iB - 1)]) {$_}})
-
-    return $deck
-}
-
 function Move-Jocker {
     param (
         $deck,  # array
@@ -158,6 +115,73 @@ function Split-CountCut {
 
     # return @($p2) + @($p1)
 }
+
+function Get-KeyStream {
+    param (
+        $length,
+        $key
+    )
+
+    $Gamma = [ordered] @{}
+    
+    $key = $key.Split(' ')  # string to array
+    
+    $KeyStream = @()  # ключевой поток = кол-во должно совпадать с исходным сообщением
+    for ($i = 0; $i -lt $length; $i++)
+    {
+        $step = [ordered] @{}
+        
+        # step 1 - move jocker A
+        
+        $key = Move-Jocker -deck $key -jocker 'A' -shift 1
+        
+        $step.add("step 1 move A", ($Key -join ' '))
+        
+        
+        # step 2 - move jocker B
+        
+        $key = Move-Jocker -deck $key -jocker 'B' -shift 2
+        
+        $step.add("step 2 move B", ($Key -join ' '))  # for debug
+        
+        
+        # step 3 - swap the cards above the first joker with the cards below the second joker
+        
+        $key = Split-TripleCut -deck $key
+        
+        $step.add("step 3 Triple Cut", ($Key -join ' '))  # for debug
+        
+        
+        # step 4 - cut after the counted card
+        
+        $key = Split-CountCut -deck $key
+        
+        $step.add("step 4 Count Cut", ($Key -join ' '))  # for debug
+        
+        
+        # step 5 - find the output card (look at the top card, count down the number, next card after last counted will be the OUTPUT)
+        
+        # $top  # значение верхней карты, если карта = джокер, то значение = кол-во карт в колоде - 1
+        if ($key[0] -eq 'A' -or $key[0] -eq 'B') {$top = $key.Length - 1} else {$top = $key[0]}
+        
+        # $out  # значение карты, следующей после последней отсчитанной
+        if ($key[$top] -eq 'A' -or $key[$top] -eq 'B') {$out = [int] $key.Length - 1} else {$out = [int] $key[$top]}
+        
+        if ($out -gt 26 -and $out -le 52) { $out -= 26 }
+        elseif ($out -gt 52)              { $out -= 52 }
+        
+        $KeyStream += [int] $out
+
+        $step.add("step 5 Find Out Card", $out)  # for debug
+        
+        $Gamma.add("key $($i + 1)", $step)  # for debug
+    }
+
+    $Gamma.add("KeyStream", $KeyStream)  # for debug
+    return $Gamma
+    # return $KeyStream
+}
+
 
 function Clear-OpenText {
     param ([string] $text)

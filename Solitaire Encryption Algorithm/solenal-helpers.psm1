@@ -101,7 +101,7 @@ function Move-JockersDirty {
 
 function Move-Jocker {
     param (
-        $deck,
+        $deck,  # array
         $jocker,  # 'A' or 'B'
         $shift  # 1 or 2 
     )

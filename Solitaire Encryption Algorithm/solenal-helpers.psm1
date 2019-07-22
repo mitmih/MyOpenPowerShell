@@ -1,4 +1,4 @@
-$abc = [ordered] @{
+$LetterByValue = @{
     1  = 'A'
     2  = 'B'
     3  = 'C'
@@ -27,7 +27,63 @@ $abc = [ordered] @{
     26 = 'Z'
 }
 
+$ValueByLetter = @{
+    'A' = 1
+    'B' = 2
+    'C' = 3
+    'D' = 4
+    'E' = 5
+    'F' = 6
+    'G' = 7
+    'H' = 8
+    'I' = 9
+    'J' = 10
+    'K' = 11
+    'L' = 12
+    'M' = 13
+    'N' = 14
+    'O' = 15
+    'P' = 16
+    'Q' = 17
+    'R' = 18
+    'S' = 19
+    'T' = 20
+    'U' = 21
+    'V' = 22
+    'W' = 23
+    'X' = 24
+    'Y' = 25
+    'Z' = 26
+}
 
+$abc = @(
+    'A'
+    'B'
+    'C'
+    'D'
+    'E'
+    'F'
+    'G'
+    'H'
+    'I'
+    'J'
+    'K'
+    'L'
+    'M'
+    'N'
+    'O'
+    'P'
+    'Q'
+    'R'
+    'S'
+    'T'
+    'U'
+    'V'
+    'W'
+    'X'
+    'Y'
+    'Z'
+)
 
 function Move-JockersDirty {
     param ($deck)
@@ -103,28 +159,21 @@ function Split-CountCut {
     # return @($p2) + @($p1)
 }
 
-# function Convert-JockerToValue {
-#     param ($card)
-    
-#     if ($card -eq 'A' -or $card -eq 'B') {$first = $key.Length - 1} else {$first = $card}
-#     # 
-# }
-
 function Clear-OpenText {
     param ([string] $text)
     
     $text = $text.ToUpper()
     $text = $text -replace '[^A-Z]', ''
     
+    while ($text.Length % 5 -ne 0) {
+        $text += 'X'
+    }
+    
     return $text
 }
 
 function Split-ClassicView {
     param ([string] $text)
-    
-    while ($text.Length % 5 -ne 0) {
-        $text += 'X'
-    }
     
     $split = ''
     for ($i = 0; $i -lt $text.Length; $i+= 5) {
@@ -135,9 +184,37 @@ function Split-ClassicView {
 }
 
 function ConvertTo-Encrypted {
-    param ([string] $text)
+    param (
+        [string] $text,
+        [int[]]$KeyStream
+    )
     
+    $result = ''
+    for ($i = 0; $i -lt $text.Length; $i++) {
+        # $val = ($ValueByLetter[ [string] $text[$i] ] + $KeyStream[$i])
+        $val = ($abc.IndexOf([string] $text[$i]) + $KeyStream[$i]) % 26
+        # if ($val -gt 26) { $val = $val % 26 }
+        $result += $abc[$val]
+    }
     
+    return $result
+}
+
+function ConvertTo-Decrypted {
+    param (
+        [string] $text,
+        [int[]]$KeyStream
+    )
     
-    return $null
+    $result = ''
+    for ($i = 0; $i -lt $text.Length; $i++) {
+        # $val = ($ValueByLetter[ [string] $text[$i] ] - ($KeyStream[$i] % 26) + 26) % 26
+        # $result += $LetterByValue[$val]
+        $val = ($abc.IndexOf([string] $text[$i]) - $KeyStream[$i] + 26) % 26
+        # if ($val -gt 26) { $val = $val % 26 }
+        $result += $abc[$val]
+
+    }
+    
+    return $result
 }

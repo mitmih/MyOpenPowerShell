@@ -198,10 +198,7 @@ function ConvertTo-Encrypted {
         
         if ($val -gt 26) { $val %= 26 }
         
-        $result += $LetterByValue[$val]
-        
-        # $val = ($abc.IndexOf([string] $text[$i]) + $KeyStream[$i]) % 26
-        # $result += $abc[$val]
+        $result += $LetterByValue[$val]        
     }
     
     return $result

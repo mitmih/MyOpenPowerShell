@@ -15,50 +15,57 @@ function Move-Jockers {
 function Split-TripleCut {
     param ($deck)
 
+    # find edges of range
+    $min = [System.Math]::Min($deck.IndexOf('A'), $deck.IndexOf('B'))
+    $max = [System.Math]::Max($deck.IndexOf('A'), $deck.IndexOf('B'))
+    
     # split deck
-    $i1 = [System.Math]::Min($deck.IndexOf('A'), $deck.IndexOf('B'))
-    $i2 = [System.Math]::Max($deck.IndexOf('A'), $deck.IndexOf('B'))
-
-    $tc1 = $deck | Select-Object -First ($i1)
-    $tc2 = $deck[$i1..$i2]
-    $tc3 = $deck | Select-Object -Last ($deck.Length - $i2 - 1)
-    # $tc3 = @($deck | Where-Object {$_ -notin $tc1 -and $_ -notin $tc2})
-    # $tc3 = $deck[$i2..($deck.Length - 1)] | Where-Object {$_ -notin ($tc1 + $tc2)}
+    $tc1 = $deck | Select-Object -First ($min)
+    $tc2 = $deck[$min..$max]
+    $tc3 = $deck | Select-Object -Last ($deck.Length - $max - 1)
 
     return @($tc3) + @($tc2) + @($tc1)
 }
 
-# function Split-CountCut {
-#     param (
-#         OptionalParameters
-#     )
+function Split-CountCut {
+    param ($deck)
 
-# }
+    # $last # значение последней карты
+    # если карта = джокер, то её значение = кол-во карт в колоде - 1
+    if ($deck[-1] -eq 'A' -or $deck[-1] -eq 'B') {$last = $deck.Length - 1} else {$last = $deck[-1]}
 
-$a = [ordered] @{}  # for debug shifting
+    $p1 = $deck | Select-Object -First $last  # первая часть колоды содержит $last кол-во карт
+    $p2 = $deck | Select-Object -Last ($deck.Length - $last)  # оставшаяся часть колоды
 
-# $deck = 1..9 + @('A', 'B')  # Jocker A (black), JockerB (red)
-# $deck = $deck | Sort-Object {Get-Random}
-$deck = "B 2 9 1 4 6 8 7 5 3 A".Split(' ')
+    return @($p2) + @($p1)
+}
 
-$a.Add('0:', ($deck -join ' ' ))
+function Get-KeyStream {
+    param (
+        $length = 10,
+        $key = "B 2 9 1 4 6 8 7 5 3 A".Split(' ')
+    )
+    
+    $KeyStream = @()  # ключевой поток = кол-во должно совпадать с исходным сообщением
+    for ($i = 0; $i -lt $length; $i++)
+    {
+        $key = Move-Jockers -deck $key.Split(' ')
 
-$deck = Move-Jockers -deck $deck
-$a.Add('2:', ($deck -join ' ' ))
+        $key = Split-TripleCut -deck $key
+        
+        # $first  # значение первой карты, если карта = джокер, то значение = кол-во карт в колоде - 1
+        $key = Split-CountCut -deck $key
+        if ($key[0] -eq 'A' -or $key[0] -eq 'B') {$first = $key.Length - 1} else {$first = $key[0]}
+        
+        $KeyStream += $first #% 26
+    }
 
-$deck = Split-TripleCut -deck $deck
-$a.Add('3:', ($deck -join ' ' ))
+    return $KeyStream
+}
 
-# $last   # значение последней карты
-# $first  # значение первой    карты
-# если джокер, его значение = кол-во карт в колоде - 1
-if ($deck[-1] -eq 'A' -or $deck[-1] -eq 'B') {$last = $deck.Length - 1} else {$last = $deck[-1]}
 
-$p1 = $deck | Select-Object -First $last  # первая часть колоды содержит $last кол-во карт
-$p2 = $deck | Select-Object -Last ($deck.Length - $last)  # оставшаяся часть колоды
+$qwe = (1..9 + @('A', 'B') | Sort-Object {Get-Random}) -join ' '
+$qwe
 
-$deck = @($p2) + @($p1)
-if ($deck[0] -eq 'A' -or $deck[0] -eq 'B') {$first = $deck.Length - 1} else {$first = $deck[0]}
-$a.Add($first, ($deck -join ' ' ))
-
-$a
+$KeyStream = Get-KeyStream -length 5 -key $qwe
+$KeyStream -join ' '

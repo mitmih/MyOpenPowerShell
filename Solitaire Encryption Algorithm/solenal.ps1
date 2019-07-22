@@ -1,71 +1,88 @@
-function Move-Jockers {
-    param ($deck)
+# https://www.schneier.com/academic/solitaire/
 
-    $iA = if ($deck.IndexOf('A') + 1 -eq $deck.Length - 1) {($deck.IndexOf('A') + 1) % ($deck.Length - 0)} else {($deck.IndexOf('A') + 1) % ($deck.Length - 1)}
-    $part = $deck -ne 'A'  # колода без джокера A
-    $deck = $part[0..($iA - 1)] + @('A') + @($part | ForEach-Object {if ($_ -notin $part[0..($iA - 1)]) {$_}})
+Set-Location "$($MyInvocation.MyCommand.Definition | Split-Path -Parent)"
 
-    $iB = if ($deck.IndexOf('B') + 2 -eq $deck.Length - 1) {($deck.IndexOf('B') + 1) % ($deck.Length - 0)} else {($deck.IndexOf('B') + 2) % ($deck.Length - 1)}
-    $part = $deck -ne 'B'  # колода без джокера B
-    $deck = $part[0..($iB - 1)] + @('B') + @($part | ForEach-Object {if ($_ -notin $part[0..($iB - 1)]) {$_}})
+Import-Module '.\solenal-helpers.psm1' -Force
 
-    return $deck
+$abc = [ordered] @{
+    1  = 'a'
+    2  = 'b'
+    3  = 'c'
+    4  = 'd'
+    5  = 'e'
+    6  = 'f'
+    7  = 'g'
+    8  = 'h'
+    9  = 'i'
+    10 = 'j'
+    11 = 'k'
+    12 = 'l'
+    13 = 'm'
+    14 = 'n'
+    15 = 'o'
+    16 = 'p'
+    17 = 'q'
+    18 = 'r'
+    19 = 's'
+    20 = 't'
+    21 = 'u'
+    22 = 'v'
+    23 = 'w'
+    24 = 'x'
+    25 = 'y'
+    26 = 'z'
 }
 
-function Split-TripleCut {
-    param ($deck)
-
-    # find edges of range
-    $min = [System.Math]::Min($deck.IndexOf('A'), $deck.IndexOf('B'))
-    $max = [System.Math]::Max($deck.IndexOf('A'), $deck.IndexOf('B'))
-    
-    # split deck
-    $tc1 = $deck | Select-Object -First ($min)
-    $tc2 = $deck[$min..$max]
-    $tc3 = $deck | Select-Object -Last ($deck.Length - $max - 1)
-
-    return @($tc3) + @($tc2) + @($tc1)
-}
-
-function Split-CountCut {
-    param ($deck)
-
-    # $last # значение последней карты
-    # если карта = джокер, то её значение = кол-во карт в колоде - 1
-    if ($deck[-1] -eq 'A' -or $deck[-1] -eq 'B') {$last = $deck.Length - 1} else {$last = $deck[-1]}
-
-    $p1 = $deck | Select-Object -First $last  # первая часть колоды содержит $last кол-во карт
-    $p2 = $deck | Select-Object -Last ($deck.Length - $last)  # оставшаяся часть колоды
-
-    return @($p2) + @($p1)
-}
+$dbg = [ordered] @{}
 
 function Get-KeyStream {
     param (
-        $length = 10,
-        $key = "B 2 9 1 4 6 8 7 5 3 A".Split(' ')
+        $length, # = 10,
+        $key #= "B A 9 1 2 3 4 5 6 7 8".Split(' ')
+        # $key = "B 2 9 1 4 6 8 7 5 3 A".Split(' ')
     )
     
     $KeyStream = @()  # ключевой поток = кол-во должно совпадать с исходным сообщением
     for ($i = 0; $i -lt $length; $i++)
     {
-        $key = Move-Jockers -deck $key.Split(' ')
-
+        # step 1 - move jocker A
+        $key = Move-Jocker -deck $key.Split(' ') -jocker 'A' -shift 1
+        $dbg.add("step1, move A $($i+1)", ($Key -join ' '))
+        
+        # step 2 - move jocker B
+        $key = Move-Jocker -deck $key.Split(' ') -jocker 'B' -shift 2
+        $dbg.add("step2, move B $($i+1)", ($Key -join ' '))
+        
+        # step 3 - swap the cards above the first joker with the cards below the second joker
         $key = Split-TripleCut -deck $key
+        $dbg.add("step3, Triple Cut $($i+1)", ($Key -join ' '))
+        
+        # step 4 - cut after the counted card
+        $key = Split-CountCut -deck $key
+        $dbg.add("step4, Count Cut $($i+1)", ($Key -join ' '))
+        
+        
+        # step 5 - find the output card (look at the top card, count down the number, next card after last counted will be the OUTPUT)
         
         # $first  # значение первой карты, если карта = джокер, то значение = кол-во карт в колоде - 1
-        $key = Split-CountCut -deck $key
         if ($key[0] -eq 'A' -or $key[0] -eq 'B') {$first = $key.Length - 1} else {$first = $key[0]}
         
-        $KeyStream += $first #% 26
+        # $out  # значение карты, следующей после последней отсчитанной
+        if ($key[$first] -eq 'A' -or $key[$first] -eq 'B') {$out = $key.Length - 1} else {$out = $key[$first]}
+        $KeyStream += $out #% 26
     }
 
     return $KeyStream
 }
 
 
-$qwe = (1..9 + @('A', 'B') | Sort-Object {Get-Random}) -join ' '
-$qwe
+# $Key = (1..9 + @('A', 'B') | Sort-Object {Get-Random}) -join ' '
+# $Key = 'B 2 9 1 4 6 8 7 5 3 A'.Split(' ')
+$Key = 'B A 9 1 2 3 4 5 6 7 8'.Split(' ')
+# $Key
+$dbg.add('init:', ($Key -join ' '))
 
-$KeyStream = Get-KeyStream -length 5 -key $qwe
+$KeyStream = Get-KeyStream -length 5 -key $Key
+
+$dbg
 $KeyStream -join ' '

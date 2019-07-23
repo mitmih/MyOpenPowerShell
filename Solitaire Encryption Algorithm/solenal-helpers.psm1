@@ -218,10 +218,7 @@ function Clear-OpenText {
     }
     
     
-    end
-    {
-        return $text
-    }
+    end { return $text }
 }
 
 function Split-ClassicView {
@@ -291,7 +288,7 @@ function ConvertTo-Decrypted {
     return $result
 }
 
-function ConvertFrom-NumbersToLetters {  # для перевода ключевого потока в буквы
+function ConvertFrom-NumbersToLetters {  # перевод ключевого потока в буквы
     param ($KeyStream)
     
     $KeyStreamLetters = @()
@@ -301,7 +298,7 @@ function ConvertFrom-NumbersToLetters {  # для перевода ключев�
     return $KeyStreamLetters
 }
 
-function Initialize {
+function Initialize-Deck {  # инициализация колоды фразой
     param ([string] $InitBy)
     
     
@@ -311,9 +308,9 @@ function Initialize {
         
         $InitBy = Clear-OpenText -text $InitBy
         
-        $DeckStates = [ordered] @{}
+        $DeckStates = @{}
         
-        $DeckStates['deck before init'] = $Key
+        # $DeckStates['deck before init'] = $Key
         
         $DeckStates['length'] = $InitBy.length
     }
@@ -324,93 +321,90 @@ function Initialize {
         # добавить проверку - если строка, то сделать сплит
         $key = $key.Split(' ')  # string to array
         
-        for ($i = 0; $i -lt $InitBy.length; $i++)
+        for ($i = 0; $i -lt $InitBy.length - 2; $i++)  # последние две буквы используются для перемещения джокеров
         {
-            $step = [ordered] @{}
+            # $step = [ordered] @{}
             
             # step 1 - move jocker A
             
             $key = Move-Jocker -deck $key -jocker 'A' -shift 1
             
-            # $step.add("step 1 move A", ($Key -join ' '))
-            $step['step 1 move A'] = $Key -join ' '
+            # $step['step 1 move A'] = $Key -join ' '
             
             # step 2 - move jocker B
             
             $key = Move-Jocker -deck $key -jocker 'B' -shift 2
             
-            # $step.add("step 2 move B", ($Key -join ' '))
-            $step['step 2 move B'] = $Key -join ' '
+            # $step['step 2 move B'] = $Key -join ' '
             
             
             # step 3 - swap the cards above the first joker with the cards below the second joker
             
             $key = Split-TripleCut -deck $key
             
-            # $step.add("step 3 Triple Cut", ($Key -join ' '))
-            $step['step 3 Triple Cut'] = $Key -join ' '
+            # $step['step 3 Triple Cut'] = $Key -join ' '
             
             
             # step 4 - cut after the counted card
             
             $key = Split-CountCut -deck $key
             
-            # $step.add("step 4 Count Cut", ($Key -join ' '))
-            $step['step 4 Count Cut'] = $Key -join ' '
+            # $step['step 4 Count Cut'] = $Key -join ' '
+            
             
             # step 5 - repeat Count Cut using the current letter value from init phrase
             
             $key = Split-CountCut -deck $key -init $ValueByLetter[([string] $InitBy[$i])]
             
-            # $step.add("step 5 Init Cut", ($Key -join ' '))
-            $step['step 5 Init Cut'] = $Key -join ' '
+            # $step['step 5 Init Cut'] = $Key -join ' '
             
-            $DeckStates.add("init $($i + 1)", $step)
+            # $DeckStates.add("init $($i + 1)", $step)
         }
+        
+        $key = Move-Jocker -deck $key -jocker 'A' -shift $key[-2]
+        
+        $key = Move-Jocker -deck $key -jocker 'B' -shift $key[-1]
         
         $DeckStates.add('key', ($Key -join ' '))
     }
     
-
-    end
-    {
-        return $DeckStates
-    }
+    
+    end { return $DeckStates }
 }
 
-function Show-KeysDistribution {
+function Show-KeysDistribution {  # для отображения распределения ключей
     param ($KeyStream)
     
     
     begin
     {
         $distrib = [ordered] @{
-            1  = 'A '
-            2  = 'B '
-            3  = 'C '
-            4  = 'D '
-            5  = 'E '
-            6  = 'F '
-            7  = 'G '
-            8  = 'H '
-            9  = 'I '
-            10 = 'J '
-            11 = 'K '
-            12 = 'L '
-            13 = 'M '
-            14 = 'N '
-            15 = 'O '
-            16 = 'P '
-            17 = 'Q '
-            18 = 'R '
-            19 = 'S '
-            20 = 'T '
-            21 = 'U '
-            22 = 'V '
-            23 = 'W '
-            24 = 'X '
-            25 = 'Y '
-            26 = 'Z '
+            0  = 'A '
+            1  = 'B '
+            2  = 'C '
+            3  = 'D '
+            4  = 'E '
+            5  = 'F '
+            6  = 'G '
+            7  = 'H '
+            8  = 'I '
+            9  = 'J '
+            10 = 'K '
+            11 = 'L '
+            12 = 'M '
+            13 = 'N '
+            14 = 'O '
+            15 = 'P '
+            16 = 'Q '
+            17 = 'R '
+            18 = 'S '
+            19 = 'T '
+            20 = 'U '
+            21 = 'V '
+            22 = 'W '
+            23 = 'X '
+            24 = 'Y '
+            25 = 'Z '
         }
     }
     

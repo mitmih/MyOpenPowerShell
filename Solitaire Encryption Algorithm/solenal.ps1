@@ -19,7 +19,11 @@ Import-Module '.\solenal-tests.psm1' -Force
 # $Key = '47 22 42 25 10 26 23 17 49 A 40 27 31 6 5 9 2 14 44 33 36 12 4 34 48 50 28 41 52 1 21 24 16 B 51 43 38 37 20 7 46 8 19 11 30 45 39 18 15 35 29 32 13 3'  # real deck
 
 # initialize key (deck) by password phrase
-$Init = Initialize-Deck -InitBy "The licenses for most software and other practical works are designed to take away your freedom to share and change the works.  By contrast, the GNU General Public License is intended to guarantee your freedom to share and change all versions of a program--to make sure it remains free software for all its users.  We, the Free Software Foundation, use the GNU General Public License for most of our software; it applies also to any other work released this way by its authors.  You can apply it to your programs, too"
+$Init = Initialize-Deck -InitBy @'
+A separable portion of the object code, whose source code is excluded
+from the Corresponding Source as a System Library, need not be
+included in conveying the object code work
+'@
 
 $Key = $Init['key']
 

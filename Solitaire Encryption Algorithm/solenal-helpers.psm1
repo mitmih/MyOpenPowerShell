@@ -94,26 +94,25 @@ function Split-TripleCut {
 }
 
 function Split-CountCut {
-    param ($deck)
+    param ($deck, $InitBy = 0)
     
-    # $last # значение последней карты, если это джокер, то её значение = кол-во карт в колоде - 1
-    if ($deck[-1] -eq 'A' -or $deck[-1] -eq 'B') {$last = $deck.Length - 1} else {$last = $deck[-1]}
+    if ($InitBy -eq 0)
+    {
+        # $last # значение последней карты, если это джокер, то её значение = кол-во карт в колоде - 1
+        if ($deck[-1] -eq 'A' -or $deck[-1] -eq 'B') {$last = $deck.Length - 1} else {$last = $deck[-1]}
+    }
+    else
+    {
+        $last = $InitBy
+    }
     
     $p1 = $deck[0..($deck.Length - 2)] | Select-Object -First $last  # отсчитанная часть, поместим её МЕЖДУ нижней картой и остальной колодой
-    $p2 = $deck[$last..($deck.Length - 2)] # | Select-Object -Last ($deck.Length - 1 - $last)  # остаток колоды, кроме последней карты
-    # $p3 = $last # последняя карта
+    $p2 = $deck[$last..($deck.Length - 2)]  # остаток колоды, кроме последней карты
+    $p3 = $deck[-1] # последняя карта
 
-    $deck = @($p2) + @($p1) + @($last)
+    $deck = @($p2) + @($p1) + @($p3)
 
     return $deck
-    
-    # # $last # значение последней карты, если это джокер, то её значение = кол-во карт в колоде - 1
-    # if ($deck[-1] -eq 'A' -or $deck[-1] -eq 'B') {$last = $deck.Length - 1} else {$last = $deck[-1]}
-
-    # $p1 = $deck | Select-Object -First $last  # первая часть колоды содержит $last кол-во карт
-    # $p2 = $deck | Select-Object -Last ($deck.Length - $last)  # оставшаяся часть колоды
-
-    # return @($p2) + @($p1)
 }
 
 function Get-KeyStream {
@@ -121,12 +120,14 @@ function Get-KeyStream {
         $length,
         $key
     )
-
-    $Gamma = [ordered] @{}
+    
+    $DeckStates = [ordered] @{}
+    
+    # добавить проверку - если строка, то сделать сплит
     
     $key = $key.Split(' ')  # string to array
     
-    $KeyStream = @()  # ключевой поток = кол-во должно совпадать с исходным сообщением
+    $KeyStream = @()  # ключевой поток = кол-во ключей должно совпадать с кол-вом символов в выровненном до кратности 5 исходном сообщении
     for ($i = 0; $i -lt $length; $i++)
     {
         do
@@ -144,24 +145,24 @@ function Get-KeyStream {
             
             $key = Move-Jocker -deck $key -jocker 'B' -shift 2
             
-            $step.add("step 2 move B", ($Key -join ' '))  # for debug
+            $step.add("step 2 move B", ($Key -join ' '))
             
             
             # step 3 - swap the cards above the first joker with the cards below the second joker
             
             $key = Split-TripleCut -deck $key
             
-            $step.add("step 3 Triple Cut", ($Key -join ' '))  # for debug
+            $step.add("step 3 Triple Cut", ($Key -join ' '))
             
             
             # step 4 - cut after the counted card
             
             $key = Split-CountCut -deck $key
             
-            $step.add("step 4 Count Cut", ($Key -join ' '))  # for debug
-            
+            $step.add("step 4 Count Cut", ($Key -join ' '))
             
             # step 5 - find the output card (look at the top card, count down the number, next card after last counted will be the OUTPUT)
+            # # $Key = @('B') + 1..52 + @('A')  # for debug until condition
             
             # $top  # значение верхней карты, если карта = джокер, то значение = кол-во карт в колоде - 1
             if ($key[0] -eq 'A' -or $key[0] -eq 'B') {$top = $key.Length - 1} else {$top = $key[0]}
@@ -175,8 +176,6 @@ function Get-KeyStream {
             {
                 $out = $key[$top]  # т.к. индексация в массиве с 0, то $key[$top] будет следующей картой
             }
-            
-            # need fix the bug: если $out это jocker A/B нужно повторить все с первого шага (во-первых это классика алгоритма, во-вторых [int]'A' даст неверное целое, несоответствующее реальной колоде)
         }
         until ($out -ne 'A' -and $out -ne 'B')
             
@@ -187,27 +186,42 @@ function Get-KeyStream {
             
         $KeyStream += [int] $out
 
-        $step.add("step 5 Find Out Card", $out)  # for debug
+        $step.add("step 5 Find Out Card", $out)
         
-        $Gamma.add("key $($i + 1)", $step)  # for debug
+        $DeckStates.add("key $($i + 1)", $step)
     }
 
-    $Gamma.add("KeyStream", $KeyStream)  # for debug
-    return $Gamma
-    # return $KeyStream
+    $DeckStates.add("KeyStream", $KeyStream)
+    return $DeckStates
 }
 
 function Clear-OpenText {
-    param ([string] $text)
+    param ([string] $text, [switch] $AddX)
     
-    $text = $text.ToUpper()
-    $text = $text -replace '[^A-Z]', ''
-    
-    while ($text.Length % 5 -ne 0) {
-        $text += 'X'
+    begin
+    {
+        $text = $text.ToUpper()
+        
+        $text = $text -replace '[^A-Z]', ''
     }
     
-    return $text
+    
+    process
+    {
+        if ($AddX)
+        {
+            while ($text.Length % 5 -ne 0)
+            {
+                $text += 'X'
+            }
+        }
+    }
+    
+    
+    end
+    {
+        return $text
+    }
 }
 
 function Split-ClassicView {
@@ -285,4 +299,133 @@ function ConvertFrom-NumbersToLetters {  # для перевода ключев�
     foreach ($k in $KeyStream) { $KeyStreamLetters += $LetterByValue[$k] }
     
     return $KeyStreamLetters
+}
+
+function Initialize {
+    param ([string] $InitBy)
+    
+    
+    begin
+    {
+        $key = (1..52 + @('A', 'B')) -join ' '
+        
+        $InitBy = Clear-OpenText -text $InitBy
+        
+        $DeckStates = [ordered] @{}
+        
+        $DeckStates['deck before init'] = $Key
+        
+        $DeckStates['length'] = $InitBy.length
+    }
+    
+    
+    process
+    {
+        # добавить проверку - если строка, то сделать сплит
+        $key = $key.Split(' ')  # string to array
+        
+        for ($i = 0; $i -lt $InitBy.length; $i++)
+        {
+            $step = [ordered] @{}
+            
+            # step 1 - move jocker A
+            
+            $key = Move-Jocker -deck $key -jocker 'A' -shift 1
+            
+            # $step.add("step 1 move A", ($Key -join ' '))
+            $step['step 1 move A'] = $Key -join ' '
+            
+            # step 2 - move jocker B
+            
+            $key = Move-Jocker -deck $key -jocker 'B' -shift 2
+            
+            # $step.add("step 2 move B", ($Key -join ' '))
+            $step['step 2 move B'] = $Key -join ' '
+            
+            
+            # step 3 - swap the cards above the first joker with the cards below the second joker
+            
+            $key = Split-TripleCut -deck $key
+            
+            # $step.add("step 3 Triple Cut", ($Key -join ' '))
+            $step['step 3 Triple Cut'] = $Key -join ' '
+            
+            
+            # step 4 - cut after the counted card
+            
+            $key = Split-CountCut -deck $key
+            
+            # $step.add("step 4 Count Cut", ($Key -join ' '))
+            $step['step 4 Count Cut'] = $Key -join ' '
+            
+            # step 5 - repeat Count Cut using the current letter value from init phrase
+            
+            $key = Split-CountCut -deck $key -init $ValueByLetter[([string] $InitBy[$i])]
+            
+            # $step.add("step 5 Init Cut", ($Key -join ' '))
+            $step['step 5 Init Cut'] = $Key -join ' '
+            
+            $DeckStates.add("init $($i + 1)", $step)
+        }
+        
+        $DeckStates.add('key', ($Key -join ' '))
+    }
+    
+
+    end
+    {
+        return $DeckStates
+    }
+}
+
+function Show-KeysDistribution {
+    param ($KeyStream)
+    
+    
+    begin
+    {
+        $distrib = [ordered] @{
+            1  = 'A '
+            2  = 'B '
+            3  = 'C '
+            4  = 'D '
+            5  = 'E '
+            6  = 'F '
+            7  = 'G '
+            8  = 'H '
+            9  = 'I '
+            10 = 'J '
+            11 = 'K '
+            12 = 'L '
+            13 = 'M '
+            14 = 'N '
+            15 = 'O '
+            16 = 'P '
+            17 = 'Q '
+            18 = 'R '
+            19 = 'S '
+            20 = 'T '
+            21 = 'U '
+            22 = 'V '
+            23 = 'W '
+            24 = 'X '
+            25 = 'Y '
+            26 = 'Z '
+        }
+    }
+    
+    
+    process
+    {
+        foreach($k in $KeyStream)
+        {
+            $distrib[($k - 1)] += '*'
+        }
+    }
+    
+    
+    end
+    {
+        return $distrib
+    }
 }

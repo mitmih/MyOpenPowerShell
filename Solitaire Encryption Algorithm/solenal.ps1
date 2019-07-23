@@ -1,15 +1,16 @@
 # https://www.schneier.com/academic/solitaire/
 
+Clear-Host
+
 Set-Location "$($MyInvocation.MyCommand.Definition | Split-Path -Parent)"
 
 Import-Module '.\solenal-helpers.psm1' -Force
 Import-Module '.\solenal-tests.psm1' -Force
 
 
-# $Key = (1..52 + @('A', 'B') | Sort-Object {Get-Random}) -join ' '
+# $Key = (1..52 + @('A', 'B') <# | Sort-Object {Get-Random} #>) -join ' '
 # $Key = '19 51 A 12 20 2 B 23 7 45 25 33 42 50 30 10 44 5 41 40 34 14 16 35 31 21 17 18 8 48 52 27 6 39 11 22 29 13 4 38 46 24 3 47 37 15 36 26 32 43 9 1 28 49'  # 22_22_22_3_7
-$Key = '47 22 42 25 10 26 23 17 49 A 40 27 31 6 5 9 2 14 44 33 36 12 4 34 48 50 28 41 52 1 21 24 16 B 51 43 38 37 20 7 46 8 19 11 30 45 39 18 15 35 29 32 13 3'  # real
-# $Gamma.add('init:', ($Key -join ' '))  # for debug
+$Key = '47 22 42 25 10 26 23 17 49 A 40 27 31 6 5 9 2 14 44 33 36 12 4 34 48 50 28 41 52 1 21 24 16 B 51 43 38 37 20 7 46 8 19 11 30 45 39 18 15 35 29 32 13 3'  # real deck
 
 # готовим открытый текст - преобразуем в ПРОПИСНЫЕ, оставляем только буквы, дополняем X-ами до кратности 5
 # $SourceText = Clear-OpenText -text 'Do Not use PC friend'

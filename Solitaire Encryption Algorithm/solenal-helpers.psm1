@@ -129,47 +129,62 @@ function Get-KeyStream {
     $KeyStream = @()  # ключевой поток = кол-во должно совпадать с исходным сообщением
     for ($i = 0; $i -lt $length; $i++)
     {
-        $step = [ordered] @{}
+        do
+        {
+            $step = [ordered] @{}
+            
+            # step 1 - move jocker A
+            
+            $key = Move-Jocker -deck $key -jocker 'A' -shift 1
+            
+            $step.add("step 1 move A", ($Key -join ' '))
+            
+            
+            # step 2 - move jocker B
+            
+            $key = Move-Jocker -deck $key -jocker 'B' -shift 2
+            
+            $step.add("step 2 move B", ($Key -join ' '))  # for debug
+            
+            
+            # step 3 - swap the cards above the first joker with the cards below the second joker
+            
+            $key = Split-TripleCut -deck $key
+            
+            $step.add("step 3 Triple Cut", ($Key -join ' '))  # for debug
+            
+            
+            # step 4 - cut after the counted card
+            
+            $key = Split-CountCut -deck $key
+            
+            $step.add("step 4 Count Cut", ($Key -join ' '))  # for debug
+            
+            
+            # step 5 - find the output card (look at the top card, count down the number, next card after last counted will be the OUTPUT)
+            
+            # $top  # значение верхней карты, если карта = джокер, то значение = кол-во карт в колоде - 1
+            if ($key[0] -eq 'A' -or $key[0] -eq 'B') {$top = $key.Length - 1} else {$top = $key[0]}
+            
+            # $out  # значение карты, следующей после последней отсчитанной
+            if ($key[$top] -eq 'A' -or $key[$top] -eq 'B')
+            {
+                $out = $key[$key.Length - 1]  # если джокер - то смотрим последнюю карту
+            }
+            else
+            {
+                $out = $key[$top]  # т.к. индексация в массиве с 0, то $key[$top] будет следующей картой
+            }
+            
+            # need fix the bug: если $out это jocker A/B нужно повторить все с первого шага (во-первых это классика алгоритма, во-вторых [int]'A' даст неверное целое, несоответствующее реальной колоде)
+        }
+        until ($out -ne 'A' -and $out -ne 'B')
+            
+        $out = [int] $out
         
-        # step 1 - move jocker A
-        
-        $key = Move-Jocker -deck $key -jocker 'A' -shift 1
-        
-        $step.add("step 1 move A", ($Key -join ' '))
-        
-        
-        # step 2 - move jocker B
-        
-        $key = Move-Jocker -deck $key -jocker 'B' -shift 2
-        
-        $step.add("step 2 move B", ($Key -join ' '))  # for debug
-        
-        
-        # step 3 - swap the cards above the first joker with the cards below the second joker
-        
-        $key = Split-TripleCut -deck $key
-        
-        $step.add("step 3 Triple Cut", ($Key -join ' '))  # for debug
-        
-        
-        # step 4 - cut after the counted card
-        
-        $key = Split-CountCut -deck $key
-        
-        $step.add("step 4 Count Cut", ($Key -join ' '))  # for debug
-        
-        
-        # step 5 - find the output card (look at the top card, count down the number, next card after last counted will be the OUTPUT)
-        
-        # $top  # значение верхней карты, если карта = джокер, то значение = кол-во карт в колоде - 1
-        if ($key[0] -eq 'A' -or $key[0] -eq 'B') {$top = $key.Length - 1} else {$top = $key[0]}
-        
-        # $out  # значение карты, следующей после последней отсчитанной
-        if ($key[$top] -eq 'A' -or $key[$top] -eq 'B') {$out = [int] $key.Length - 1} else {$out = [int] $key[$top]}
-        
-        if ($out -gt 26 -and $out -le 52) { $out -= 26 }
-        elseif ($out -gt 52)              { $out -= 52 }
-        
+        if ($out -gt 26 <# -and $out -le 52 #>) { $out -= 26 }
+        # elseif ($out -gt 52)              { $out -= 52 }
+            
         $KeyStream += [int] $out
 
         $step.add("step 5 Find Out Card", $out)  # for debug
@@ -181,7 +196,6 @@ function Get-KeyStream {
     return $Gamma
     # return $KeyStream
 }
-
 
 function Clear-OpenText {
     param ([string] $text)

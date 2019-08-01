@@ -45,7 +45,7 @@ $DecryptedText = ConvertTo-Decrypted -KeyStream $KeyStream -text $EncryptedText
 
 Test-EncryptDecrypt -text (Clear-OpenText -text 'abcdefghijklmnopqrstuvwxyz' <# -AddX #>)
 
-# Write-Host "initialized by ", $Init['length'], " letters"
+Write-Host "initialized by ", $Init['length'], " letters"
 
 Write-Host "Source text`t", (Split-ClassicView -text $SourceText)
 Write-Host "Encrypted text`t", (Split-ClassicView -text $EncryptedText)

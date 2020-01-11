@@ -27,17 +27,23 @@ catch { Write-Host '$a is not a number' ; break }
 try { [decimal]$b = $b }
 catch { Write-Host '$b is not a number' ; break }
 
+if ( $op -notin @('+', '-', '*', '/') )
+{
+    Write-Host "$op is not an operator"
+    break
+}
+
 switch ($op)
 {
-    {$_ -eq '+'} { $c = $a + $b }
+    {$_ -eq '+'} { $c = $a + $b ; break }
     
-    {$_ -eq '-'} { $c = $a - $b }
+    {$_ -eq '-'} { $c = $a - $b ; break }
     
-    {$_ -eq '*'} { $c = $a * $b }
+    {$_ -eq '*'} { $c = $a * $b ; break }
     
-    {$_ -eq '/'} { $c = $a / $b }
+    {$_ -eq '/'} { $c = $a / $b ; break }
     
-    Default {Write-Host '$op is not an operator'}
+    # Default {Write-Host 'ooopps...' ; break}
 }
 
 $l = ([string]$c).Length

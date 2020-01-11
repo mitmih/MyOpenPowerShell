@@ -6,8 +6,9 @@ $x = @{}  # числители для заданной точности
 
 $y = @{}  # знаменатели для заданной точности
 
-$ResultsTable = @()  # дроби для всех точностей в диапазоне 0..$limit
+$ResultsTable = @()  # таблица с дробями для точностей из диапазона 0..$limit
 
+# поиск числителя и знаменателя
 for ($digits = 0; $digits -le $limit; $digits++)
 {
     for ($i = 1; $i -lt 1000; $i++)
@@ -29,6 +30,7 @@ for ($digits = 0; $digits -le $limit; $digits++)
     }
 }
 
+# формирование таблицы
 for ($i = $limit; $i -ge 0; $i--)
 {
     $ResultsTable += New-Object psobject -Property @{
@@ -38,12 +40,14 @@ for ($i = $limit; $i -ge 0; $i--)
         '    ~    ' = "{0,-$($limit + 3):n$($i + 1)}" -f ([System.Math]::Round($x[$i] / $y[$i], $i + 1, 1))
         '    PI   ' = "{0,-$($limit + 3)}" -f ([System.Math]::Round([math]::pi, $i + 1, 1))
     }
-    # $ResultsTable[$i] = "{0,$($limit / 2)} / {1,-$($limit / 2)} = {2,-$($limit + 3):n$($i+1)} vs {3:n$($i + 1)}" -f $x[$i], $y[$i], ([System.Math]::Round($x[$i] / $y[$i], $i + 1, 1)), ([System.Math]::Round([math]::pi, $i + 1, 1))
 }
 
+# вывод таблицы на экран
 $ResultsTable.GetEnumerator() | Sort-Object -Property 'TO4HOCTb' | Select-Object -Property `
     'TO4HOCTb', `
     'DPOBb    ', `
     '         ', `
     '    ~    ', `
     '    PI   ' | Format-Table -AutoSize
+
+[math]::pi  # 3,14159265358979

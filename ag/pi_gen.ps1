@@ -53,14 +53,24 @@ for ($digits = 0; $digits -le $lim_max; $digits++)
 
 
 # формирование таблицы
+[int] $w = (([string]$x["$lim_max"] + [string]$y["$lim_max"]).Length + 3) / 2
 for ($i = $lim_max; $i -ge $lim_min; $i--)
 {
     $ResultsTable += New-Object psobject -Property @{
-        'TO4HOCTb'  = '{0,4}' -f $i
-        'DPOBb    ' = "{0,3} / {1,-3}" -f $x["$i"], $y["$i"]
-        '         ' = '{0, 4}' -f '='
-        '    ~    ' = "{0,-$($lim_max + 3):n$($i + 1)}" -f ([System.Math]::Round($x["$i"] / $y["$i"], $i + 0, 1))
+        'TO4HOCTb'  = "{0,$w}" -f $i
+        '  DPOBb  ' = "{0,$w} / {1,-$w}" -f $x["$i"], $y["$i"]
+        '    PI   ' = "{0,-$($lim_max + 3):n$($i + 1)}" -f ([System.Math]::Round($x["$i"] / $y["$i"], $i + 1, 1))
+    }
+    
+    $ResultsTable += New-Object psobject -Property @{
+        'TO4HOCTb'  = "{0,$w} " -f $i
+        '  DPOBb  ' = ''
         '    PI   ' = "{0,-$($lim_max + 3):n$($i + 1)}" -f ([System.Math]::Round([math]::pi, $i + 1, 1))
+    }
+    $ResultsTable += New-Object psobject -Property @{
+        'TO4HOCTb'  = "{0,$w}  " -f $i
+        '  DPOBb  ' = ''
+        '    PI   ' = ''
     }
 }
 
@@ -71,8 +81,5 @@ for ($i = $lim_max; $i -ge $lim_min; $i--)
 
 $ResultsTable.GetEnumerator() | Sort-Object -Property 'TO4HOCTb' | Select-Object -Property `
     'TO4HOCTb', `
-    'DPOBb    ', `
-    '         ', `
-    '    ~    ', `
+    '  DPOBb  ', `
     '    PI   ' | Format-Table -Property *
-

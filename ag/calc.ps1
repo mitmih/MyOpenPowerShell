@@ -18,6 +18,8 @@ if ($null -eq $op) { $op = Read-Host }  # get operation
 
 if ($null -eq $b)  { $b  = Read-Host }  # get 2nd number
 
+# [decimal]::MinValue
+# [decimal]::MaxValue
 
 try { [decimal]$a = $a }
 catch { Write-Host '$a is not a number' ; break }
@@ -27,7 +29,7 @@ catch { Write-Host '$b is not a number' ; break }
 
 switch ($op)
 {
-    {$_ -eq '+'} { Write-Host "$a $op $b =", ($a + $b) }
+    {$_ -eq '+'} { Write-Host ( "{0,50:n}`n{1,50}`n{2,50:n}`n{3}`n={4,49:n}" -f $a, $op, $b,('_'*50), ($a + $b) )}
     
     {$_ -eq '-'} { Write-Host "$a $op $b =", ($a - $b) }
     

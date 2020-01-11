@@ -29,13 +29,17 @@ catch { Write-Host '$b is not a number' ; break }
 
 switch ($op)
 {
-    {$_ -eq '+'} { Write-Host ( "{0,50:n}`n{1,50}`n{2,50:n}`n{3}`n={4,49:n}" -f $a, $op, $b,('_'*50), ($a + $b) )}
+    {$_ -eq '+'} { $c = $a + $b }
     
-    {$_ -eq '-'} { Write-Host "$a $op $b =", ($a - $b) }
+    {$_ -eq '-'} { $c = $a - $b }
     
-    {$_ -eq '*'} { Write-Host "$a $op $b =", ($a * $b) }
+    {$_ -eq '*'} { $c = $a * $b }
     
-    {$_ -eq '/'} { Write-Host "$a $op $b =", ($a / $b) }
+    {$_ -eq '/'} { $c = $a / $b }
     
     Default {Write-Host '$op is not an operator'}
 }
+
+$l = ([string]$c).Length
+
+Write-Host ( "{0,$l}`n{1,-$l}`n{2,$l}`n{3}`n{4,$l}" -f $a, $op, $b,('_' * $l), $c )

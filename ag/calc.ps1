@@ -41,7 +41,7 @@ switch ($op)
     
     {$_ -eq '*'} { $c = $a * $b ; break }
     
-    {$_ -eq '/'} { $c = $a / $b ; break }
+    {$_ -eq '/'} { $c = $a / $b ; break }  # ∞
     
     # Default {Write-Host 'ooopps...' ; break}
 }

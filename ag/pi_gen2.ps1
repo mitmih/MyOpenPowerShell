@@ -24,6 +24,11 @@ $t_min = [ordered]@{'0' = $WatchDogTimer.Elapsed.TotalMinutes}  # отсечка
 
 $ticks = [ordered]@{'0' = $WatchDogTimer.Elapsed.Ticks}  # отсечка таймера
 
+$res = [ordered]@{
+    "$c" = @()
+}
+
+# 14 63885804 / 20335483
 
 # поиск числителя и знаменателя
 for ($digits = 1; $digits -le $lim_max; $digits++)

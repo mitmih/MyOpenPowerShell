@@ -14,7 +14,13 @@ $x = [ordered]@{'0' = 3}  # числители для заданной точн�
 
 $y = [ordered]@{'0' = 1}  # знаменатели для заданной точности
 
-$t = [ordered]@{'0' = $WatchDogTimer.Elapsed.TotalSeconds}  # отсечка таймера
+
+$t_sec = [ordered]@{'0' = $WatchDogTimer.Elapsed.TotalSeconds}  # отсечка таймера
+
+$t_min = [ordered]@{'0' = $WatchDogTimer.Elapsed.TotalMinutes}  # отсечка таймера
+
+$ticks = [ordered]@{'0' = $WatchDogTimer.Elapsed.Ticks}  # отсечка таймера
+
 
 $ResultsTable = @()  # таблица с дробями для точностей из диапазона $lim_min..$lim_max
 
@@ -24,7 +30,8 @@ for ($digits = 1; $digits -le $lim_max; $digits++)
 {
     $i = $y[($digits - 1)]
     do
-    # for ($i = $y[($digits - 1)]; $i -lt $b; $i++)
+    # $c = 0
+    # for ($i = $y[($digits - 1)]; $i -lt ([System.Math]::Ceiling($y[($digits - 1)] * [math]::pi)); $i++)
     {
         $a = [System.Math]::Floor($i * [math]::pi)      # вниз  до целого
         
@@ -54,8 +61,13 @@ for ($digits = 1; $digits -le $lim_max; $digits++)
         {
             $y[[string]$digits] = $i
             
-            $t[[string]$digits] = $WatchDogTimer.Elapsed.TotalSeconds
+            $t_min[[string]$digits] = $WatchDogTimer.Elapsed.TotalMinutes
             
+            $t_sec[[string]$digits] = $WatchDogTimer.Elapsed.TotalSeconds
+            
+            $ticks[[string]$digits] = $WatchDogTimer.Elapsed.Ticks
+            
+            # $c++
             break
         }
         
@@ -67,28 +79,24 @@ for ($digits = 1; $digits -le $lim_max; $digits++)
 
 
 # формирование таблицы
-[int] $w = (([string]$x["$lim_max"] + [string]$y["$lim_max"]).Length + 3) / 2
-for ($i = $lim_max; $i -ge $lim_min; $i--)
+for ($i = $lim_min; $i -le $lim_max; $i++)
 {
     $ResultsTable += New-Object psobject -Property @{
-        'TO4HOCTb'          = "{0,$w}" -f $i
-        '   4uc/\uTE/\b  '  = "{0,16}" -f $x["$i"]
+        'TO4HOCTb'          = "{0,4}" -f $i
+        '     4uc/\uTE/\b'  = "{0,16}" -f $x["$i"]
         '/'                 = '/'
-        '  3HAMEHATE/\b  '  = "{0,-16}" -f $y["$i"]
-        '    PI   ' = "{0}" -f (( [string]( $x["$i"] / $y["$i"]) )[0..($i + 1)] -join '')
-        '      time      ' = "{0,7:n1}  {1,7}" -f $t["$i"], 'seconds'
-        # Write-Host ("{0,5:N1} minutes {1}" -f $WatchDogTimer.Elapsed.TotalMinutes, 'installation process launched') #_#
+        '3HAMEHATE/\b    '  = "{0,-16}" -f $y["$i"]
+        'PI              '  = "{0}" -f (( [string]( $x["$i"] / $y["$i"]) )[0..($i + 1)] -join '')
+        '         minutes'  = "{0,7:n0}  {1,7}" -f $t_min["$i"], 'minutes'
+        '         seconds'  = "{0,7:n0}  {1,7}" -f $t_sec["$i"], 'seconds'
+        '           ticks'  = "{0,16:n0}" -f $ticks["$i"]
     }
     
     $ResultsTable += New-Object psobject -Property @{
-        'TO4HOCTb'  = "{0,$w} " -f $i
-        '    PI   ' = "{0}" -f (([string]( [math]::pi ))[0..($i + 1)] -join '')
+        'PI              ' = "{0}" -f (([string]( [math]::pi ))[0..($lim_max + 1)] -join '')
     }
     
-    $ResultsTable += New-Object psobject -Property @{
-        'TO4HOCTb'  = "{0,$w}  " -f $i
-        '    PI   ' = ''
-    }
+    $ResultsTable += New-Object psobject -Property @{}
 }
 
 
@@ -96,60 +104,56 @@ for ($i = $lim_max; $i -ge $lim_min; $i--)
 
 [math]::pi  # 3,14159265358979
 
-$ResultsTable.GetEnumerator() | Sort-Object -Property 'TO4HOCTb' | Select-Object -Property `
+$ResultsTable.GetEnumerator() | Select-Object -Property `
     'TO4HOCTb'          , `
-    '   4uc/\uTE/\b  '  , `
+    '     4uc/\uTE/\b'  , `
     '/'                 , `
-    '  3HAMEHATE/\b  '  , `
-    '    PI   '         , `
-    '      time      '  | Format-Table -Property *
+    '3HAMEHATE/\b    '  , `
+    'PI              '  , `
+    '         minutes'  ,`
+    '         seconds'  ,`
+    '           ticks'  | Format-Table -Property *
 <#
 3,14159265358979
 
-TO4HOCTb        4uc/\uTE/\b   /   3HAMEHATE/\b       PI
---------     ---------------- - ---------------- ---------
-         0                  3 / 1                3
-         0                                       3.
-         0
-         1                 19 / 6                3.1
-         1                                       3.1
-         1
-         2                 22 / 7                3.14
-         2                                       3.14
-         2
-         3                245 / 78               3.141
-         3                                       3.141
-         3
-         4                333 / 106              3.1415
-         4                                       3.1415
-         4
-         5                355 / 113              3.14159
-         5                                       3.14159
-         5
-         6                355 / 113              3.141592
-         6                                       3.141592
-         6
-         7              86953 / 27678            3.1415926
-         7                                       3.1415926
-         7
-         8             102928 / 32763            3.14159265
-         8                                       3.14159265
-         8
-         9             103993 / 33102            3.141592653
-         9                                       3.141592653
-         9
-        10             521030 / 165849           3.1415926535
-        10                                       3.1415926535
-        10
-        11             833719 / 265381           3.14159265358
-        11                                       3.14159265358
-        11
-        12            4272943 / 1360120          3.141592653589
-        12                                       3.141592653589
-        12
-        13           20530996 / 6535219          3.1415926535897
-        13                                       3.1415926535897
-        13
-        14           63885804 / 20335483         3.14159265358979
-        14                                       3.14159265358979
+TO4HOCTb      4uc/\uTE/\b / 3HAMEHATE/\b     PI                        minutes          seconds            ticks
+-------- ---------------- - ---------------- ---------------- ---------------- ---------------- ----------------
+   0                    3 / 1                3                      0  minutes       0  seconds          304 810
+                                             3.141592653589
+
+   1                   19 / 6                3.1                    0  minutes       0  seconds          312 746
+                                             3.141592653589
+
+   2                   22 / 7                3.14                   0  minutes       0  seconds          315 788
+                                             3.141592653589
+
+   3                  245 / 78               3.141                  0  minutes       0  seconds          353 510
+                                             3.141592653589
+
+   4                  333 / 106              3.1415                 0  minutes       0  seconds          364 496
+                                             3.141592653589
+
+   5                  355 / 113              3.14159                0  minutes       0  seconds          367 145
+                                             3.141592653589
+
+   6                  355 / 113              3.141592               0  minutes       0  seconds          367 791
+                                             3.141592653589
+
+   7                86953 / 27678            3.1415926              0  minutes       1  seconds       13 245 581
+                                             3.141592653589
+
+   8               102928 / 32763            3.14159265             0  minutes       2  seconds       15 839 636
+                                             3.141592653589
+
+   9               103993 / 33102            3.141592653            0  minutes       2  seconds       16 050 972
+                                             3.141592653589
+
+  10               521030 / 165849           3.1415926535           0  minutes       9  seconds       94 751 832
+                                             3.141592653589
+
+  11               833719 / 265381           3.14159265358          0  minutes      16  seconds      157 094 240
+                                             3.141592653589
+
+  12              4272943 / 1360120          3.141592653589         1  minutes      89  seconds      889 778 570
+                                             3.141592653589
 #>

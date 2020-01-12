@@ -14,25 +14,23 @@ $pi_string  = '3.1415926535897932384626433832'
 
 $pi_decimal = [decimal] $pi_string
 
-$x = [ordered]@{'0' = 3}  # числители для заданной точности
+$table = @()
 
-$y = [ordered]@{'0' = 1}  # знаменатели для заданной точности
-
-
-$t_sec = [ordered]@{'0' = $WatchDogTimer.Elapsed.TotalSeconds}  # отсечка таймера
-
-$t_min = [ordered]@{'0' = $WatchDogTimer.Elapsed.TotalMinutes}  # отсечка таймера
-
-$ticks = [ordered]@{'0' = $WatchDogTimer.Elapsed.Ticks}  # отсечка таймера
-
-
-$ResultsTable = @()  # таблица с дробями для точностей из диапазона $lim_min..$lim_max
+$table += New-Object psobject -Property ([ordered]@{
+    'acr'   = 0
+    'x'     = 3
+    'y'     = 1
+    'PI'    = '3.0'
+    'min'   = $WatchDogTimer.Elapsed.TotalMinutes
+    'sec'   = $WatchDogTimer.Elapsed.TotalSeconds
+    'tic'   = $WatchDogTimer.Elapsed.Ticks
+})
 
 
 # поиск числителя и знаменателя
 for ($digits = 1; $digits -le $lim_max; $digits++)
 {
-    $i = $y[($digits - 1)]
+    $i = $table[($digits - 1)].'y'
     
     do
     {
@@ -53,15 +51,15 @@ for ($digits = 1; $digits -le $lim_max; $digits++)
         
         if ($err)
         {
-            $x[[string]$digits] = $j
-            
-            $y[[string]$digits] = $i
-            
-            $t_min[[string]$digits] = $WatchDogTimer.Elapsed.TotalMinutes
-            
-            $t_sec[[string]$digits] = $WatchDogTimer.Elapsed.TotalSeconds
-            
-            $ticks[[string]$digits] = $WatchDogTimer.Elapsed.Ticks
+            $table += New-Object psobject -Property ([ordered]@{
+                'acr'   = $digits
+                'x'     = $j
+                'y'     = $i
+                'PI'    = $pi1
+                'min'   = $WatchDogTimer.Elapsed.TotalMinutes
+                'sec'   = $WatchDogTimer.Elapsed.TotalSeconds
+                'tic'   = $WatchDogTimer.Elapsed.Ticks
+            })
             
             break
         }
@@ -73,86 +71,78 @@ for ($digits = 1; $digits -le $lim_max; $digits++)
 
 
 # формирование таблицы
-for ($i = $lim_min; $i -le $lim_max; $i++)
+$ResultsTable = @()  # таблица с дробями для точностей из диапазона $lim_min..$lim_max
+foreach ($r in $table)
 {
-    $ResultsTable += New-Object psobject -Property @{
-        'TO4HOCTb'          = "{0,4}" -f $i
-        '     4uc/\uTE/\b'  = "{0,16}" -f $x["$i"]
-        '/'                 = '/'
-        '3HAMEHATE/\b    '  = "{0,-16}" -f $y["$i"]
-        'PI              '  = "{0}" -f (( [string]( $x["$i"] / $y["$i"]) )[0..($i + 1)] -join '')
-        '         minutes'  = "{0,7:n0}  {1,7}" -f $t_min["$i"], 'minutes'
-        '         seconds'  = "{0,7:n0}  {1,7}" -f $t_sec["$i"], 'seconds'
-        '           ticks'  = "{0,16:n0}" -f $ticks["$i"]
-    }
+    $ResultsTable += New-Object psobject -Property ([ordered]@{
+        'TO4HOCTb'          = "{0,4}" -f $r.acr
+        ' 4uc/\uTE/\b'      = "{0,12}" -f $r.x
+        ' '                 = '/'
+        '3HAMEHATE/\b'      = "{0,-12}" -f $r.y
+        'PI             '   = "{0}" -f $r.'PI'
+        ' minutes'          = "{0,4:n0} {1}" -f $r.min, 'min'
+        '   seconds' = "{0,6:n0} {1}" -f $r.sec, 'sec'
+        '           ticks'  = "{0,16:n0}" -f $r.tic
+    })
     
-    $ResultsTable += New-Object psobject -Property @{
-        'PI              ' = "{0}" -f ( $pi_string[0..($lim_max + 1)] -join '' )
-    }
+    $ResultsTable += New-Object psobject -Property ([ordered]@{
+        'PI             '  = "{0}" -f ( $pi_string[0..($lim_max + 1)] -join '' )
+    })
     
-    $ResultsTable += New-Object psobject -Property @{}
+    $ResultsTable += New-Object psobject -Property ([ordered]@{})
 }
 
 
 # вывод таблицы на экран
+# $ResultsTable | Set-Content -Path ".\pi_$lim_max.txt" -Force
+$ResultsTable | Export-Csv -NoTypeInformation -Encoding Unicode -Path ".\pi_$lim_max.csv" -Force
+$ResultsTable | Format-Table -Property *
 
-$pi_decimal  # 3,14159265358979
 
-$ResultsTable.GetEnumerator() | Select-Object -Property `
-    'TO4HOCTb'          , `
-    '     4uc/\uTE/\b'  , `
-    '/'                 , `
-    '3HAMEHATE/\b    '  , `
-    'PI              '  , `
-    '         minutes'  ,`
-    '         seconds'  ,`
-    '           ticks'  | Format-Table -Property *
 <#
-3,1415926535897932384626433832
+TO4HOCTb  4uc/\uTE/\b   3HAMEHATE/\b PI               minutes    seconds            ticks
+-------- ------------ - ------------ --------------- -------- ---------- ----------------
+   0                3 / 1            3.0                0 min      0 sec          330 785
+                                     3.1415926535897
 
-TO4HOCTb      4uc/\uTE/\b / 3HAMEHATE/\b     PI                        minutes          seconds            ticks
--------- ---------------- - ---------------- ---------------- ---------------- ---------------- ----------------
-   0                    3 / 1                3                      0  minutes       0  seconds          312 234
-                                             3.1415926535897
+   1               19 / 6            3.1                0 min      0 sec          340 875
+                                     3.1415926535897
 
-   1                   19 / 6                3.1                    0  minutes       0  seconds          321 836
-                                             3.1415926535897
+   2               22 / 7            3.14               0 min      0 sec          344 742
+                                     3.1415926535897
 
-   2                   22 / 7                3.14                   0  minutes       0  seconds          325 375
-                                             3.1415926535897
+   3              245 / 78           3.141              0 min      0 sec          382 486
+                                     3.1415926535897
 
-   3                  245 / 78               3.141                  0  minutes       0  seconds          373 388
-                                             3.1415926535897
+   4              333 / 106          3.1415             0 min      0 sec          395 170
+                                     3.1415926535897
 
-   4                  333 / 106              3.1415                 0  minutes       0  seconds          388 564
-                                             3.1415926535897
+   5              355 / 113          3.14159            0 min      0 sec          399 162
+                                     3.1415926535897
 
-   5                  355 / 113              3.14159                0  minutes       0  seconds          393 970
-                                             3.1415926535897
+   6              355 / 113          3.141592           0 min      0 sec          400 522
+                                     3.1415926535897
 
-   6                  355 / 113              3.141592               0  minutes       0  seconds          395 096
-                                             3.1415926535897
+   7            86953 / 27678        3.1415926          0 min      1 sec       12 463 682
+                                     3.1415926535897
 
-   7                86953 / 27678            3.1415926              0  minutes       1  seconds       12 830 102
-                                             3.1415926535897
+   8           102928 / 32763        3.14159265         0 min      1 sec       14 869 175
+                                     3.1415926535897
 
-   8               102928 / 32763            3.14159265             0  minutes       2  seconds       15 345 107
-                                             3.1415926535897
+   9           103993 / 33102        3.141592653        0 min      2 sec       15 045 325
+                                     3.1415926535897
 
-   9               103993 / 33102            3.141592653            0  minutes       2  seconds       15 523 636
-                                             3.1415926535897
+  10           521030 / 165849       3.1415926535       0 min      9 sec       87 134 294
+                                     3.1415926535897
 
-  10               521030 / 165849           3.1415926535           0  minutes       9  seconds       94 270 388
-                                             3.1415926535897
+  11           833719 / 265381       3.14159265358      0 min     14 sec      144 238 319
+                                     3.1415926535897
 
-  11               833719 / 265381           3.14159265358          0  minutes      15  seconds      153 997 787
-                                             3.1415926535897
+  12          4272943 / 1360120      3.141592653589     1 min     82 sec      815 108 829
+                                     3.1415926535897
 
-  12              4272943 / 1360120          3.141592653589         1  minutes      86  seconds      857 575 707
-                                             3.1415926535897
-
-  13             20530996 / 6535219          3.1415926535897        7  minutes     437  seconds    4 365 075 722
-                                             3.1415926535897
+  13         20530996 / 6535219      3.1415926535897    7 min    420 sec    4 198 036 806
+                                     3.1415926535897
 
 #
 ???

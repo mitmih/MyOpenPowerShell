@@ -10,6 +10,8 @@ $WatchDogTimer = [system.diagnostics.stopwatch]::startNew()  # профилир�
 Clear-Host
 
 
+$pi = '3.1415926535141592653526433832'
+
 $x = [ordered]@{'0' = 3}  # числители для заданной точности
 
 $y = [ordered]@{'0' = 1}  # знаменатели для заданной точности
@@ -29,9 +31,8 @@ $ResultsTable = @()  # таблица с дробями для точносте�
 for ($digits = 1; $digits -le $lim_max; $digits++)
 {
     $i = $y[($digits - 1)]
+    
     do
-    # $c = 0
-    # for ($i = $y[($digits - 1)]; $i -lt ([System.Math]::Ceiling($y[($digits - 1)] * [math]::pi)); $i++)
     {
         $a = [System.Math]::Floor($i * [math]::pi)      # вниз  до целого
         
@@ -39,26 +40,19 @@ for ($digits = 1; $digits -le $lim_max; $digits++)
         
         for ($j = $a; $j -le $b; $j++)   # числитель в xPI раз больше знаменателя
         {
-            # $err = [System.Math]::Round( ($j/$i - [math]::pi), $digits, 1)
+            $pi0 = $pi[0..($digits + 1)] -join ''
             
-            # $err = ( ([string](   $j / $i  ))[0..($digits + 1)] -join '' ) -ieq ( ([string]( [math]::pi ))[0..($digits + 1)] -join '' )
-            
-            $pi0 = ([string]( [math]::pi ))[0..($digits + 1)] -join ''
-            
-            $pi1 = ([string](   $j / $i  ))[0..($digits + 1)] -join ''
+            $pi1 = ([string]( [decimal]$j / [decimal]$i ))[0..($digits + 1)] -join ''
             
             $err = $pi0 -eq $pi1
             
-            if ($err)
-            {
-                $x[[string]$digits] = $j
-                
-                break
-            }
+            if ($err) { break }
         }
         
         if ($err)
         {
+            $x[[string]$digits] = $j
+            
             $y[[string]$digits] = $i
             
             $t_min[[string]$digits] = $WatchDogTimer.Elapsed.TotalMinutes
@@ -67,13 +61,11 @@ for ($digits = 1; $digits -le $lim_max; $digits++)
             
             $ticks[[string]$digits] = $WatchDogTimer.Elapsed.Ticks
             
-            # $c++
             break
         }
         
-        # if ($i % 1000 -eq 0 ) { @{$digits = ($j, $i)} }
-        
         $i++
+        
     } while ($true)
 }
 
@@ -162,4 +154,10 @@ TO4HOCTb      4uc/\uTE/\b / 3HAMEHATE/\b     PI                        minutes  
 
   14             63885804 / 20335483         3.14159265358979      27  minutes   1 604  seconds   16 036 043 135
                                              3.14159265358979
+#
+20530996 / 6535219      3,1415926535 897_2667939 66659725
+                        3,1415926535 897_9323846 2643383279 5028841971
+63885804 / 20335483     3,1415926535 897_8687646 6125737
+
+3,1415926535897266793966659725
 #>

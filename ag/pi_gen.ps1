@@ -1,13 +1,13 @@
 [cmdletbinding()]
 param(
-    [alias('l')][Parameter(position=0)][ValidateRange(0, 27)][uint16] $lim_min = 2,  # нижняя граница точности, для которой нужно начать поиск дроби
-    [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max = 6   # верхняя граница точности
+    [alias('l')][Parameter(position=0)][ValidateRange(0, 18)][uint16] $lim_min = 2,  # нижняя граница точности, для которой нужно начать поиск дроби
+    [alias('u')][Parameter(position=1)][ValidateRange(1, 19)][uint16] $lim_max = 6   # верхняя граница точности
 )
 
 
 $WatchDogTimer = [system.diagnostics.stopwatch]::startNew()  # профилирование
 
-# Clear-Host  # для 18 знаков диапазон пуст $i = 1068966896..1293411282
+# Clear-Host  # для 18 знаков диапазон пуст $i = 1068966896..1293411282  # $17*$pi_decimal 3358258547,4042845354011997093
 
 
 $pi_string  = '3.1415926535897932384626433832'

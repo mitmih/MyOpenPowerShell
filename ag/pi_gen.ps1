@@ -7,7 +7,7 @@ param(
 
 $WatchDogTimer = [system.diagnostics.stopwatch]::startNew()  # профилирование
 
-# Clear-Host  # $i = 1265266261
+# Clear-Host  # для 18 знаков диапазон пуст $i = 1068966896..1293411282
 
 
 $pi_string  = '3.1415926535897932384626433832'
@@ -98,7 +98,7 @@ for ($accuracy = $lim_min; $accuracy -le $lim_max; $accuracy++)
             break
         }
         
-        if ($i % 100001 -eq 0) { Write-Progress -Activity $i -PercentComplete ($i % 100) -Status $WatchDogTimer.Elapsed.TotalMinutes }
+        if ($i % 100001 -eq 0) { Write-Progress -Activity ('{0:n0}' -f $i) -PercentComplete ($i % 100) -Status $WatchDogTimer.Elapsed.TotalMinutes }
         
         $i++
         

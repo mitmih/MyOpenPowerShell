@@ -1,13 +1,13 @@
 [cmdletbinding()]
 param(
-    [alias('1')][Parameter(position=0)][uint16] $lim_min = 0,  # точность, кол-во знаков после запятой
-    [alias('2')][Parameter(position=1)][uint16] $lim_max = 2  # точность, кол-во знаков после запятой
+    [alias('l')][Parameter(position=0)][ValidateRange(0, 27)][uint16] $lim_min = 2,  # нижняя граница точности, для которой нужно начать поиск дроби
+    [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max = 6   # верхняя граница точности
 )
 
 
 $WatchDogTimer = [system.diagnostics.stopwatch]::startNew()  # профилирование
 
-# Clear-Host
+# Clear-Host  # $i = 1265266261
 
 
 $pi_string  = '3.1415926535897932384626433832'
@@ -35,47 +35,40 @@ $table = @(
     New-Object psobject -Property ([ordered] @{'acr' = 17; 'x' = 1068966896; 'y' = 340262731})
 )
 
-# $table = @()
-# $table += New-Object psobject -Property ([ordered]@{
-#     'acr'   = 0
-#     'x'     = 3
-#     'y'     = 1
-#     'PI'    = '3.0'
-#     'min'   = $WatchDogTimer.Elapsed.TotalMinutes
-#     'sec'   = $WatchDogTimer.Elapsed.TotalSeconds
-#     'tic'   = $WatchDogTimer.Elapsed.Ticks
-# })
+$table | Add-Member -MemberType NoteProperty -Name 'PI' -Value $null
+$table | Add-Member -MemberType NoteProperty -Name 'min' -Value $null
+$table | Add-Member -MemberType NoteProperty -Name 'sec' -Value $null
+$table | Add-Member -MemberType NoteProperty -Name 'tic' -Value $null
 
+$table[0].PI = '3.'
 
-# поиск числителя и знаменателя
-for ($digits = 1; $digits -le $lim_max; $digits++)
+$lim_min = [System.Math]::Max(1, $lim_min)
+
+$table = $table[0..($lim_min - 1)]
+
+# поиск дроби: проверка числителя-кандидата, знаменатель++
+for ($accuracy = $lim_min; $accuracy -le $lim_max; $accuracy++)
 {
-    $i = $table[($digits - 1)].'y'
+    $i = $table[($accuracy - 1)].'y'
+    
+    $acr = $accuracy + 1
+    
+    $pi0 = $pi_string[0..$acr] -join ''
     
     do
     {
-        $a = [System.Math]::Floor($i * $pi_decimal)      # вниз  до целого
+        $a = [System.Math]::Floor($i * $pi_decimal)      # нижнее значение числителя-кандидата
         
-        $b = [System.Math]::Ceiling($i * $pi_decimal)    # вверх до целого
+        $piA = ([string]( [decimal]$a / [decimal]$i ))[0..$acr] -join ''
         
-        for ($j = $a; $j -le $b; $j++)   # числитель в xPI раз больше знаменателя
-        {
-            $pi0 = $pi_string[0..($digits + 1)] -join ''
-            
-            $pi1 = ([string]( [decimal]$j / [decimal]$i ))[0..($digits + 1)] -join ''
-            
-            $err = $pi0 -eq $pi1
-            
-            if ($err) { break }
-        }
-        
-        if ($err)
+        if ($pi0 -eq $piA)  # -or $pi0 -ne $piB)
+        # Floor подходит, достигнут текущий уровень точности, запоминание результатов
         {
             $table += New-Object psobject -Property ([ordered]@{
-                'acr'   = $digits
-                'x'     = $j
+                'acr'   = $accuracy
+                'x'     = $a
                 'y'     = $i
-                'PI'    = $pi1
+                'PI'    = $piA + '_<'  # ::Floor
                 'min'   = $WatchDogTimer.Elapsed.TotalMinutes
                 'sec'   = $WatchDogTimer.Elapsed.TotalSeconds
                 'tic'   = $WatchDogTimer.Elapsed.Ticks
@@ -84,9 +77,34 @@ for ($digits = 1; $digits -le $lim_max; $digits++)
             break
         }
         
+        
+        $b = [System.Math]::Ceiling($i * $pi_decimal)    # вверхнее значение числителя-кандидата
+        
+        $piB = ([string]( [decimal]$b / [decimal]$i ))[0..$acr] -join ''
+        
+        if ($pi0 -eq $piB)  # -or $pi0 -ne $piB)
+        # Ceiling подходит, достигнут текущий уровень точности, запоминание результатов
+        {
+            $table += New-Object psobject -Property ([ordered]@{
+                'acr'   = $accuracy
+                'x'     = $b
+                'y'     = $i
+                'PI'    = $piB + '_>'  # ::Ceiling
+                'min'   = $WatchDogTimer.Elapsed.TotalMinutes
+                'sec'   = $WatchDogTimer.Elapsed.TotalSeconds
+                'tic'   = $WatchDogTimer.Elapsed.Ticks
+            })
+            
+            break
+        }
+        
+        if ($i % 100001 -eq 0) { Write-Progress -Activity $i -PercentComplete ($i % 100) -Status $WatchDogTimer.Elapsed.TotalMinutes }
+        
         $i++
         
-    } while ($true)
+        continue
+    }
+    while ($true)
 }
 
 
@@ -113,10 +131,10 @@ foreach ($r in $table)
 }
 
 
-# вывод таблицы на экран
-
+# сохранение результатов в csv-файл
 $table | Export-Csv -NoTypeInformation -Encoding Unicode -Path ".\pi_$lim_max.csv" -Force
 
+# вывод результатов на экран
 $ResultsTable | Format-Table -Property *
 
 
@@ -178,7 +196,5 @@ TO4HOCTb  4uc/\uTE/\b   3HAMEHATE/\b PI                   minutes    seconds    
   17       1068966896 / 340262731    3.14159265358979323  444 min 26 628 sec  266 279 631 730
                                      3.14159265358979323
 #
-
-3,1415926535897932384626433832
-
+                                     3,1415926535897932384626433832
 #>

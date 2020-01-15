@@ -7,7 +7,7 @@ param(
 
 $WatchDogTimer = [system.diagnostics.stopwatch]::startNew()  # профилирование
 
-# Clear-Host  # для 18 знаков диапазон $i = 1068966896..1293411282 пуст  # 1293411282 * $pi_decimal 4063371381,6013563746748992874
+# Clear-Host  # для 18 знаков диапазон $i = 1068966896..1436411651 пуст  # 1436411651 * $pi_decimal  # 4512620290,3123859824087622839
 
 
 $pi_string  = '3.1415926535897932384626433832'
@@ -197,4 +197,25 @@ TO4HOCTb  4uc/\uTE/\b   3HAMEHATE/\b PI                   minutes    seconds    
                                      3.14159265358979323
 #
                                      3,1415926535897932384626433832
+#
+
+18 stopped:
+
+$WatchDogTimer.elapsed, $i, ($i * $pi_decimal)
+
+
+Days              : 1
+Hours             : 13
+Minutes           : 56
+Seconds           : 54
+Milliseconds      : 284
+Ticks             : 1366142849354
+TotalDays         : 1,58118385341898
+TotalHours        : 37,9484124820556
+TotalMinutes      : 2276,90474892333
+TotalSeconds      : 136614,2849354
+TotalMilliseconds : 136614284,9354
+
+1436411651
+4512620290,3123859824087622839
 #>

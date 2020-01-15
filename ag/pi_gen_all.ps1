@@ -118,7 +118,7 @@ for ($accuracy = $lim_min; $accuracy -le $lim_max; $accuracy++)
             else { $i++ ; continue }
         }
         
-        if ($i % 100001 -eq 0) { Write-Progress -Activity ('accuracy {0:n0} digits' -f $accuracy) -PercentComplete ($i % 100) -Status ('{0:n0} minutes' -f $WatchDogTimer.Elapsed.TotalMinutes) -CurrentOperation ('{0:n0}' -f $i)}
+        if ($i % 100001 -eq 0) { Write-Progress -Activity ("accuracy {1} / {0} digits" -f $lim_max, $accuracy) -PercentComplete ($i % 100) -Status ('{0:n0} minutes, last fraction {1:n0} / {2:n0} = {3}' -f $WatchDogTimer.Elapsed.TotalMinutes, $table[-1].x, $table[-1].y, $table[-1].PI) -CurrentOperation ('{0:n0}' -f $i)}
         
         $i++
         

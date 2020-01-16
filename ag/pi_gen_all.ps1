@@ -1,13 +1,22 @@
 [cmdletbinding()]
 param(
-    [alias('l')][Parameter(position=0)][ValidateRange(0, 18)][uint16] $lim_min = 4,  # нижняя граница точности, для которой нужно начать поиск дроби
-    [alias('u')][Parameter(position=1)][ValidateRange(1, 19)][uint16] $lim_max = 6   # верхняя граница точности
+    [alias('l')][Parameter(position=0)][ValidateRange(0, 27)][uint16] $lim_min = 4,  # нижняя граница точности, для которой нужно начать поиск дроби
+    [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max = 6   # верхняя граница точности
 )
 
 
 $WatchDogTimer = [system.diagnostics.stopwatch]::startNew()  # профилирование
 
 # Clear-Host  # для 18 знаков диапазон $i = 1068966896..1436411651 пуст  # 1436411651 * $pi_decimal  # 4512620290,3123859824087622839
+
+function Update-Table {
+    param ()
+    
+    
+    
+    # 
+    return $null
+}
 
 
 $pi_string  = '3.1415926535897932384626433832'
@@ -33,7 +42,9 @@ $table = @(
     New-Object psobject -Property ([ordered] @{'acr' = 15; 'x' = 165707065; 'y' = 52746197})
     New-Object psobject -Property ([ordered] @{'acr' = 16; 'x' = 411557987; 'y' = 131002976})
     New-Object psobject -Property ([ordered] @{'acr' = 17; 'x' = 1068966896; 'y' = 340262731})
+    New-Object psobject -Property ([ordered] @{'acr' = 17; 'x' = 2549491779; 'y' = 811528438})
 )
+
 
 $table | Add-Member -MemberType NoteProperty -Name 'PI' -Value $null
 $table | Add-Member -MemberType NoteProperty -Name 'min' -Value $null
@@ -44,7 +55,7 @@ $table[0].PI = '3.'
 
 $lim_min = [System.Math]::Max(1, $lim_min)
 
-$table = $table[0..($lim_min - 1)]
+$table = $table | Where-Object {$_.acr -le $lim_min}
 
 # поиск дроби: проверка числителя-кандидата, знаменатель++
 for ($accuracy = $lim_min; $accuracy -le $lim_max; $accuracy++)
@@ -76,15 +87,11 @@ for ($accuracy = $lim_min; $accuracy -le $lim_max; $accuracy++)
                 'tic'   = $WatchDogTimer.Elapsed.Ticks
             })
             
-            if ($pi2 -eq $piAA)
-            {
-                $table | Export-Csv -NoTypeInformation -Encoding Unicode -Path ".\pi_all_$lim_max.csv" -Force
-                
-                $table[-1] | Format-Table -Property *
-                
-                break
-            }
-            else { $i++ ; continue }
+            $table | Export-Csv -NoTypeInformation -Encoding Unicode -Path ".\pi_all_$lim_max.csv" -Force
+            
+            $table[-1] | Format-Table -Property *
+            
+            if ($pi2 -eq $piAA) { break } else { $i++ ; continue }
         }
         
         
@@ -107,15 +114,11 @@ for ($accuracy = $lim_min; $accuracy -le $lim_max; $accuracy++)
                 'tic'   = $WatchDogTimer.Elapsed.Ticks
             })
             
-            if ($pi2 -eq $piBB)
-            {
-                $table | Export-Csv -NoTypeInformation -Encoding Unicode -Path ".\pi_all_$lim_max.csv" -Force
-                
-                $table[-1] | Format-Table -Property *
-                
-                break
-            }
-            else { $i++ ; continue }
+            $table | Export-Csv -NoTypeInformation -Encoding Unicode -Path ".\pi_all_$lim_max.csv" -Force
+            
+            $table[-1] | Format-Table -Property *
+            
+            if ($pi2 -eq $piBB) { break } else { $i++ ; continue }
         }
         
         if ($i % 100001 -eq 0) { Write-Progress -Activity ("accuracy {1} / {0} digits" -f $lim_max, $accuracy) -PercentComplete ($i % 100) -Status ('{0:n0} minutes, last fraction {1:n0} / {2:n0} = {3}' -f $WatchDogTimer.Elapsed.TotalMinutes, $table[-1].x, $table[-1].y, $table[-1].PI) -CurrentOperation ('{0:n0}' -f $i)}

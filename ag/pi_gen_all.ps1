@@ -42,7 +42,7 @@ $table = @(
     New-Object psobject -Property ([ordered] @{'acr' = 15; 'x' = 165707065; 'y' = 52746197})
     New-Object psobject -Property ([ordered] @{'acr' = 16; 'x' = 411557987; 'y' = 131002976})
     New-Object psobject -Property ([ordered] @{'acr' = 17; 'x' = 1068966896; 'y' = 340262731})
-    New-Object psobject -Property ([ordered] @{'acr' = 17; 'x' = 2549491779; 'y' = 811528438})
+    New-Object psobject -Property ([ordered] @{'acr' = 17; 'x' = 2795342701; 'y' = 889785217})
 )
 
 

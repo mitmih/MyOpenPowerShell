@@ -1,16 +1,20 @@
 [cmdletbinding()]
 param(
-    [alias('l')][Parameter(position=0)][ValidateRange(0, 27)][uint16] $lim_min = 6,  # нижняя граница точности, для которой нужно начать поиск дроби
-    [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max = 8   # верхняя граница точности
+    [alias('l')][Parameter(position=0)][ValidateRange(0, 27)][uint16] $lim_min  = 1,    # нижняя граница точности, для которой нужно начать поиск дроби
+    [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max  = 9,    # верхняя граница точности
+    [alias('k')][Parameter(position=2)]                      [uint16] $x        = 1,    # потоков на одно ядро
+    [alias('d')][Parameter(position=3)]                      [uint16] $delta    = 10  # сколько чисел просчитывать в одном потоке
 )
 
 
 $WatchDogTimer = [system.diagnostics.stopwatch]::startNew()  # профилирование
 
 
-$pi_string  = '3.1415926535897932384626433832'
+$piString  = '3.1415926535897932384626433832'
 
-$pi_decimal = [decimal] $pi_string
+$piDecimal = [decimal] $piString
+
+$MTCount = [int] $env:NUMBER_OF_PROCESSORS * $x
 
 $PreCalcTable = @(
     <# 3, 1415926535893891715436873217 #> New-Object psobject -Property ([ordered] @{'acr' = 0; 'x' = 3; 'y' = 1})
@@ -57,64 +61,64 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
     {
         Param
         (
-            [decimal]   $i,
-            [int]       $accuracy,
-            [string]    $pi0,
-            [string]    $pi2,
-            [decimal]   $pi_decimal
+            [decimal]   $piDecimal,    # 28 digit decimal precision
+            [string]    $piString,     # PI максимальной точности
+            [int]       $accuracy,      # искомый уровень точности (кол-во знаков после запятой)
+            [string]    $piTarget,           # PI требуемого уровня точности
+            [decimal]   $RangeStart,    # начало диапазона
+            [decimal]   $RangeEnd,      # объём диапазона
+            [decimal]   $step           # шаг диапазона
         )
         
-        # $SolutionFound = $false
+        $table = @()
         
-        $Solution = New-Object psobject -Property ([ordered]@{
-            'acr'   = $accuracy
-            'x'     = $null
-            'y'     = $i
-            'PI'    = $null
-            'min'    = $null
-            'sec'    = $null
-            'tic'    = $null
-        })
-        
-        $a = [System.Math]::Floor($i * $pi_decimal)      # нижнее значение числителя-кандидата
-        
-        $piA = ([string]( [decimal]$a / [decimal]$i ))[0..($accuracy + 1)] -join ''
-        
-        $piAA = ([string]( [decimal]$a / [decimal]$i ))[0..($accuracy + 2)] -join ''
-        
-        if ($pi0 -eq $piA)  # Floor подходит, достигнут текущий уровень точности, запоминание результатов
+        for ($i = $RangeStart; $i -lt $RangeEnd; $i+=$step)
         {
-            # $SolutionFound = $true
+            $a = [System.Math]::Floor($i * $piDecimal)      # нижнее значение числителя-кандидата
             
-            $Solution.'x'    = $a
+            $piCalc = [string] ([decimal]$a / [decimal]$i)
             
-            if ($pi2 -ne $piAA) { $Solution.'PI'    = $piA + '_<' } else { $Solution.'PI'    = $piAA + '_<' }
+            if ($piTarget -eq ($piCalc[0..($accuracy + 1)] -join ''))  # Floor подходит, достигнут текущий уровень точности, запоминание результатов
+            {
+                
+                if (condition) {
+                    
+                }
+                
+                $table += New-Object psobject -Property ([ordered]@{
+                    'acr'   = $accuracy #+ $break
+                    'x'     = $a
+                    'y'     = $i
+                    'PI'    = $piA + '_<'  # ::Floor
+                    'min'   = $WatchDogTimer.Elapsed.TotalMinutes
+                    'sec'   = $WatchDogTimer.Elapsed.TotalSeconds
+                    'tic'   = $WatchDogTimer.Elapsed.Ticks
+                })
+            }
+            
+            
+            $b = [System.Math]::Ceiling($i * $piDecimal)    # вверхнее значение числителя-кандидата
+            
+            $piCalc = [string] ([decimal]$b / [decimal]$i)
+            
+            if ($piTarget -eq ($piCalc[0..($accuracy + 1)] -join ''))  # Ceiling подходит, достигнут текущий уровень точности, запоминание результатов
+            {
+                
+                
+                
+                $table += New-Object psobject -Property ([ordered]@{
+                    'acr'   = $accuracy #+ $break
+                    'x'     = $b
+                    'y'     = $i
+                    'PI'    = $piB + '_>'  # ::Ceiling
+                    'min'   = $WatchDogTimer.Elapsed.TotalMinutes
+                    'sec'   = $WatchDogTimer.Elapsed.TotalSeconds
+                    'tic'   = $WatchDogTimer.Elapsed.Ticks
+                })
+            }
         }
         
-        
-        $b = [System.Math]::Ceiling($i * $pi_decimal)    # вверхнее значение числителя-кандидата
-        
-        $piB = ([string]( [decimal]$b / [decimal]$i ))[0..($accuracy + 1)] -join ''
-        
-        $piBB = ([string]( [decimal]$b / [decimal]$i ))[0..($accuracy + 2)] -join ''
-        
-        if ($pi0 -eq $piB)  # Ceiling подходит, достигнут текущий уровень точности, запоминание результатов
-        {
-            # $SolutionFound = $true
-            
-            $Solution.'x'    = $b
-            
-            if ($pi2 -ne $piBB) { $Solution.'PI'    = $piB + '_>' } else { $Solution.'PI'    = $piBB + '_>' }
-        }
-        
-        
-        if ($pi2 -eq $piAA -or $pi2 -eq $piBB)
-        {
-            $Solution.'acr' = $accuracy + 1
-            
-        }
-        
-        return $Solution
+        return $table
     }
     
     #endregion: скрипт-блок задания, выполняемого в потоке
@@ -125,20 +129,22 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
     # нужно извлечь из таблицы следующий y_max, соответстующий следующему уровню точности (если есть) или самомоу большому возможному y (если нет в таблице) и внутренний цикл делать до этого y_max
     for ($accuracy = $lim_min; $accuracy -le $lim_max; $accuracy++)
     {
-        $pi0 = $pi_string[0..($accuracy + 1)] -join ''
+        $piTarget = $piString[0..($accuracy + 1)] -join ''
         
-        $pi2 = $pi_string[0..($accuracy + 2)] -join ''  # +1 точность, при котором прерывается поиск дроби текущей точности
+        # $pi2 = $piString[0..($accuracy + 2)] -join ''  # +1 точность, при котором прерывается поиск дроби текущей точности
         
         
         $ContinueWhileCycle = $true
         
-        $k = 1
+        $WhileCount = 0
+        
+        $RangeStart = [decimal]($RecalcTable | Where-Object {$_.acr -le $accuracy} | Select-Object -Last 1).y #+ 1
         
         while ($ContinueWhileCycle)
         {
             #region: инициализация пула
             
-            $Pool = [RunspaceFactory]::CreateRunspacePool(1, [int] $env:NUMBER_OF_PROCESSORS * 30)
+            $Pool = [RunspaceFactory]::CreateRunspacePool(1, $MTCount)
             
             $Pool.ApartmentState = "MTA"
             
@@ -149,26 +155,31 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             #endregion: инициализация пула
             
             
+            #region: запуск потоков
             
-            $RangeStart = [decimal]($RecalcTable | Where-Object {$_.acr -eq $accuracy} | Select-Object -First 1).y + 120 * ($k - 1)
+            $RangeStart +=  $MTCount * $delta * $WhileCount
             
-            $RangeEnd   = [decimal]($RecalcTable | Where-Object {$_.acr -eq $accuracy} | Select-Object -First 1).y + 120 * $k
+            # $RangeEnd   = $RangeStart + $delta
             
-            for ($i = $RangeStart; $i -lt $RangeEnd; $i++)
+            for ($i = 0; $i -lt $MTCount; $i++)
             {
                 $NewShell = [PowerShell]::Create()
                 
                 $null = $NewShell.AddScript($Payload)
                 
-                $null = $NewShell.AddArgument($i)
+                $null = $NewShell.AddArgument($piDecimal)
+                
+                $null = $NewShell.AddArgument($piString)
                 
                 $null = $NewShell.AddArgument($accuracy)
                 
-                $null = $NewShell.AddArgument($pi0)
+                $null = $NewShell.AddArgument($piTarget)
                 
-                $null = $NewShell.AddArgument($pi2)
-                
-                $null = $NewShell.AddArgument($pi_decimal)
+                $null = $NewShell.AddArgument($RangeStart + $i)  # start
+                # ($RangeStart + $i)
+                $null = $NewShell.AddArgument($RangeStart + $i + $MTCount * $delta)  # end
+                # ($RangeStart + $i + $MTCount * $delta)
+                $null = $NewShell.AddArgument($MTCount)  # step
                 
                 $NewShell.RunspacePool = $Pool
                 
@@ -177,40 +188,57 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 $RunSpaces += $RunSpace
             }
             
-            # Write-Host ("accuracy {0} `t runspaces count {1}" -f $accuracy, $RunSpaces.Count)
+            #endregion: запуск потоков
             
+            
+            while ($RunSpaces.Status.IsCompleted -contains $false) { Start-Sleep -Seconds 1 }  # ожидание завершения ВСЕХ потоков, в дальнейшем можно обрабатывать завершённые и сохранять обработанные в словарь, чтобы сократить время выполнения
+            
+            
+            #region: обработка завершённых потоков 
+            
+            $doExport = $false
             
             foreach ($RS in $RunSpaces | Where-Object -FilterScript {$_.Status.IsCompleted -eq $true})  # цикл по завершённым
             {
                 $Result = $RS.Pipe.EndInvoke($RS.Status)
-                if ($Result[0].x)
+                if ($Result.Count -gt 0)
                 {
-                    $Result[0].min = $WatchDogTimer.Elapsed.TotalMinutes
-                    $Result[0].sec = $WatchDogTimer.Elapsed.TotalSeconds
-                    $Result[0].tic = $WatchDogTimer.Elapsed.Ticks
+                    $doExport = $true
                     
-                    $RecalcTable += $Result[0]
-                    
-                    $RecalcTable | Export-Csv -NoTypeInformation -Encoding Unicode -Path ".\pi_all_$lim_max.csv" -Force  # сохранение результатов в csv-файл
-                    
-                    if ($Result[0].acr -gt $accuracy)  # NextLevelofAccuracy
-                    {
-                        $RecalcTable[-3..-1] | Format-Table -Property *  # вывод результатов на экран
-                        
-                        $ContinueWhileCycle = $false  # нужно тут прервать цикл while
-                        
-                        break
+                    $Result | ForEach-Object {
+                        $_.min = $WatchDogTimer.Elapsed.TotalMinutes
+                        $_.sec = $WatchDogTimer.Elapsed.TotalSeconds
+                        $_.tic = $WatchDogTimer.Elapsed.Ticks
                     }
+                    
+                    $RecalcTable += $Result
+                    
+                    if ($null -ne ($Result | Where-Object {$_.acr -gt $accuracy})) {
+                        $ContinueWhileCycle = $false
+                    }  # найдена дробь следующего уровня точности, цикл while нужно прервать и начать заново для +1 точности
                 }
             }
-        
+            
+            
+            if ($doExport)
+            {
+                $RecalcTable = $RecalcTable | Sort-Object -Property 'acr','x'
+                
+                $RecalcTable | Export-Csv -NoTypeInformation -Encoding Unicode -Path ".\pi_all_$lim_max.csv" -Force  # сохранение результатов в csv-файл
+                
+                $RecalcTable[-2..-1] | Format-Table -Property *
+            }
+            
+            #endregion: обработка завершённых потоков
+            
+            
             #region: после завершения всех потоков закрываем пул
             
             $Pool.Close()
             
             $Pool.Dispose()
             
-            $k++
+            $WhileCount = 1
             
             #endregion: после завершения всех потоков закрываем пул
         }

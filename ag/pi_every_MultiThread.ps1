@@ -1,9 +1,9 @@
 [cmdletbinding()]
 param(
     [alias('l')][Parameter(position=0)][ValidateRange(0, 27)][uint16] $lim_min  = 1,    # нижняя граница точности, для которой нужно начать поиск дроби
-    [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max  = 9,    # верхняя граница точности
+    [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max  = 11,    # верхняя граница точности
     [alias('k')][Parameter(position=2)]                      [uint16] $x        = 1,    # потоков на одно ядро
-    [alias('d')][Parameter(position=3)]                      [uint16] $delta    = 250   # сколько чисел просчитывать в одном потоке
+    [alias('d')][Parameter(position=3)]                      [uint16] $delta    = 24000   # сколько чисел просчитывать в одном потоке
 )
 
 
@@ -40,7 +40,6 @@ $PreCalcTable = @(
     <# 3,14159265358979323846 23817428 #> New-Object psobject -Property ([ordered] @{'acr' = 20; 'x' = 21053343141; 'y' = 6701487259})
     <# 3,141592653589793238462 3817428 #> New-Object psobject -Property ([ordered] @{'acr' = 21; 'x' = 21053343141; 'y' = 6701487259})
 )
-
 
 $PreCalcTable | Add-Member -MemberType NoteProperty -Name 'PI' -Value $null    # значение π с заданной точностью
 $PreCalcTable | Add-Member -MemberType NoteProperty -Name 'min' -Value $null   # время, затраченное на поиск пары x/y, в минутах
@@ -133,6 +132,8 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
     
     for ($accuracy = $lim_min; $accuracy -le $lim_max; $accuracy++)
     {
+        # $accuracy = [System.Math]::Max(($RecalcTable | Select-Object -Last 1).acr + 1, $lim_min)
+        
         $ContinueWhileCycle = $true
         
         $WhileCount = 0
@@ -171,9 +172,9 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 $null = $NewShell.AddArgument($accuracy)
                 
                 $null = $NewShell.AddArgument($RangeStart + $i)  # start
-                # ($RangeStart + $i)
+                
                 $null = $NewShell.AddArgument($RangeStart + $i + $MTCount * $delta)  # end
-                # ($RangeStart + $i + $MTCount * $delta)
+                
                 $null = $NewShell.AddArgument($MTCount)  # step
                 
                 $NewShell.RunspacePool = $Pool
@@ -182,7 +183,9 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 
                 $RunSpaces += $RunSpace
             }
-            $RangeStart + $i + $MTCount * $delta
+            
+            "{0} .. {1}" -f ($RangeStart + $i),($RangeStart + $i + $MTCount * $delta)
+            
             #endregion: запуск потоков
             
             
@@ -199,7 +202,6 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 if ($Result.Count -gt 0)
                 {
                     $doExport = $true
-                    
                     $Result | ForEach-Object {
                         $_.min = $WatchDogTimer.Elapsed.TotalMinutes
                         $_.sec = $WatchDogTimer.Elapsed.TotalSeconds
@@ -208,9 +210,10 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                     
                     $RecalcTable += $Result
                     
-                    if ($null -ne ($Result | Where-Object {$_.acr -gt $accuracy})) {
-                        $ContinueWhileCycle = $false
-                    }  # найдена дробь следующего уровня точности, цикл while нужно прервать и начать заново для +1 точности
+                    $ContinueWhileCycle = $false
+                    # if ($null -ne ($Result | Where-Object {$_.acr -ge $accuracy})) {
+                    #     $ContinueWhileCycle = $false
+                    # }  # найдена дробь следующего уровня точности, цикл while нужно прервать и начать заново для +1 точности
                 }
             }
             
@@ -234,6 +237,8 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             $Pool.Dispose()
             
             $WhileCount = 1
+            
+            $accuracy = ($RecalcTable | Select-Object -Last 1).acr
             
             #endregion: после завершения всех потоков закрываем пул
         }

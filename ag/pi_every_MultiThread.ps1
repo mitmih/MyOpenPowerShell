@@ -3,7 +3,7 @@ param(
     [alias('l')][Parameter(position=0)][ValidateRange(0, 27)][uint16] $lim_min  = 1,    # нижняя граница точности, для которой нужно начать поиск дроби
     [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max  = 9,    # верхняя граница точности
     [alias('k')][Parameter(position=2)]                      [uint16] $x        = 1,    # потоков на одно ядро
-    [alias('d')][Parameter(position=3)]                      [uint16] $delta    = 10  # сколько чисел просчитывать в одном потоке
+    [alias('d')][Parameter(position=3)]                      [uint16] $delta    = 250   # сколько чисел просчитывать в одном потоке
 )
 
 
@@ -61,10 +61,9 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
     {
         Param
         (
-            [decimal]   $piDecimal,    # 28 digit decimal precision
-            [string]    $piString,     # PI максимальной точности
+            [decimal]   $piDecimal,     # 28 digit decimal precision
+            [string]    $piString,      # PI максимальной точности, 28
             [int]       $accuracy,      # искомый уровень точности (кол-во знаков после запятой)
-            [string]    $piTarget,           # PI требуемого уровня точности
             [decimal]   $RangeStart,    # начало диапазона
             [decimal]   $RangeEnd,      # объём диапазона
             [decimal]   $step           # шаг диапазона
@@ -78,22 +77,24 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             
             $piCalc = [string] ([decimal]$a / [decimal]$i)
             
-            if ($piTarget -eq ($piCalc[0..($accuracy + 1)] -join ''))  # Floor подходит, достигнут текущий уровень точности, запоминание результатов
+            if (($piString[0..($accuracy + 1)] -join '') -eq ($piCalc[0..($accuracy + 1)] -join ''))  # Floor подходит, достигнут текущий уровень точности, запоминание результатов
             {
-                
-                if (condition) {
+                while (($piString[0..($accuracy + 1)] -join '') -eq ($piCalc[0..($accuracy + 1)] -join ''))
+                {
+                    $table += New-Object psobject -Property ([ordered]@{
+                        'acr'   = $accuracy
+                        'x'     = $a
+                        'y'     = $i
+                        'PI'    = ($piCalc[0..($accuracy + 1)] -join '') + '_<'  # ::Floor
+                        'min'   = $WatchDogTimer.Elapsed.TotalMinutes
+                        'sec'   = $WatchDogTimer.Elapsed.TotalSeconds
+                        'tic'   = $WatchDogTimer.Elapsed.Ticks
+                    })
                     
+                    $accuracy++
                 }
                 
-                $table += New-Object psobject -Property ([ordered]@{
-                    'acr'   = $accuracy #+ $break
-                    'x'     = $a
-                    'y'     = $i
-                    'PI'    = $piA + '_<'  # ::Floor
-                    'min'   = $WatchDogTimer.Elapsed.TotalMinutes
-                    'sec'   = $WatchDogTimer.Elapsed.TotalSeconds
-                    'tic'   = $WatchDogTimer.Elapsed.Ticks
-                })
+                continue
             }
             
             
@@ -101,20 +102,24 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             
             $piCalc = [string] ([decimal]$b / [decimal]$i)
             
-            if ($piTarget -eq ($piCalc[0..($accuracy + 1)] -join ''))  # Ceiling подходит, достигнут текущий уровень точности, запоминание результатов
+            if (($piString[0..($accuracy + 1)] -join '') -eq ($piCalc[0..($accuracy + 1)] -join ''))  # Ceiling подходит, достигнут текущий уровень точности, запоминание результатов
             {
+                while (($piString[0..($accuracy + 1)] -join '') -eq ($piCalc[0..($accuracy + 1)] -join ''))
+                {
+                    $table += New-Object psobject -Property ([ordered]@{
+                        'acr'   = $accuracy
+                        'x'     = $b
+                        'y'     = $i
+                        'PI'    = ($piCalc[0..($accuracy + 1)] -join '') + '_>'  # ::Ceiling
+                        'min'   = $WatchDogTimer.Elapsed.TotalMinutes
+                        'sec'   = $WatchDogTimer.Elapsed.TotalSeconds
+                        'tic'   = $WatchDogTimer.Elapsed.Ticks
+                    })
+                    
+                    $accuracy++
+                }
                 
-                
-                
-                $table += New-Object psobject -Property ([ordered]@{
-                    'acr'   = $accuracy #+ $break
-                    'x'     = $b
-                    'y'     = $i
-                    'PI'    = $piB + '_>'  # ::Ceiling
-                    'min'   = $WatchDogTimer.Elapsed.TotalMinutes
-                    'sec'   = $WatchDogTimer.Elapsed.TotalSeconds
-                    'tic'   = $WatchDogTimer.Elapsed.Ticks
-                })
+                continue
             }
         }
         
@@ -126,14 +131,8 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
     
     #region: запуск задания и добавление потоков в пул
     
-    # нужно извлечь из таблицы следующий y_max, соответстующий следующему уровню точности (если есть) или самомоу большому возможному y (если нет в таблице) и внутренний цикл делать до этого y_max
     for ($accuracy = $lim_min; $accuracy -le $lim_max; $accuracy++)
     {
-        $piTarget = $piString[0..($accuracy + 1)] -join ''
-        
-        # $pi2 = $piString[0..($accuracy + 2)] -join ''  # +1 точность, при котором прерывается поиск дроби текущей точности
-        
-        
         $ContinueWhileCycle = $true
         
         $WhileCount = 0
@@ -159,8 +158,6 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             
             $RangeStart +=  $MTCount * $delta * $WhileCount
             
-            # $RangeEnd   = $RangeStart + $delta
-            
             for ($i = 0; $i -lt $MTCount; $i++)
             {
                 $NewShell = [PowerShell]::Create()
@@ -172,8 +169,6 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 $null = $NewShell.AddArgument($piString)
                 
                 $null = $NewShell.AddArgument($accuracy)
-                
-                $null = $NewShell.AddArgument($piTarget)
                 
                 $null = $NewShell.AddArgument($RangeStart + $i)  # start
                 # ($RangeStart + $i)
@@ -187,14 +182,14 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 
                 $RunSpaces += $RunSpace
             }
-            
+            $RangeStart + $i + $MTCount * $delta
             #endregion: запуск потоков
             
             
             while ($RunSpaces.Status.IsCompleted -contains $false) { Start-Sleep -Seconds 1 }  # ожидание завершения ВСЕХ потоков, в дальнейшем можно обрабатывать завершённые и сохранять обработанные в словарь, чтобы сократить время выполнения
             
             
-            #region: обработка завершённых потоков 
+            #region: обработка завершённых потоков
             
             $doExport = $false
             
@@ -222,7 +217,7 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             
             if ($doExport)
             {
-                $RecalcTable = $RecalcTable | Sort-Object -Property 'acr','x'
+                $RecalcTable = $RecalcTable | Sort-Object -Property 'acr', 'x'
                 
                 $RecalcTable | Export-Csv -NoTypeInformation -Encoding Unicode -Path ".\pi_all_$lim_max.csv" -Force  # сохранение результатов в csv-файл
                 

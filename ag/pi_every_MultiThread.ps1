@@ -225,15 +225,15 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 }
             }
             
+            $RecalcTable = $RecalcTable | Sort-Object -Property 'acr', 'x'
+            
+            $RecalcTable[-1] | Format-Table -Property * #| Out-Null -Debug
+            
             $dbgRanges | Format-Table * -Debug
             
             if ($doExport)
             {
-                $RecalcTable = $RecalcTable | Sort-Object -Property 'acr', 'x'
-                
-                $RecalcTable | Select-Object -Property 'acr','x','y','PI' | Export-Csv -NoTypeInformation -Encoding Unicode -Path (".\pi_all {0} x{1} {2}.csv" -f $lim_max,$x, $delta) -Force  # сохранение результатов в csv-файл
-                
-                $RecalcTable[-2..-1] | Format-Table -Property * | Out-Null -Debug
+                $RecalcTable | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -NoTypeInformation -Encoding Unicode -Path (".\pi {0} x{1} {2} all.csv" -f $lim_max,$x, $delta) -Force  # сохранение результатов в csv-файл
             }
             
             #endregion: обработка завершённых потоков
@@ -261,14 +261,15 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
 
 $RecalcTable | Format-Table -Property *
 
-$RecalcTable | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -NoTypeInformation -Encoding Unicode -Path (".\pi_all {0} x{1} {2}.csv" -f $lim_max,$x, $delta) -Force  # сохранение результатов в csv-файл
+$RecalcTable | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -NoTypeInformation -Encoding Unicode -Path (".\pi {0} x{1} {2} all.csv" -f $lim_max,$x, $delta) -Force  # сохранение результатов в csv-файл
 
 
 $FirstOnly = @()
 
 $RecalcTable | Group-Object -Property 'acr' | ForEach-Object {$FirstOnly += ($_ | Select-Object -ExpandProperty 'Group' | Select-Object -First 1) }
 
-$FirstOnly | Select-Object -Property 'acr','x','y','PI' | Export-Csv -NoTypeInformation -Encoding Unicode -Path (".\pi_all {0} x{1} {2}.csv" -f $lim_max,$x, $delta) -Force
+$FirstOnly |    Select-Object -Property 'acr','x','y','PI' |    Export-Csv -NoTypeInformation -Encoding Unicode -Path (".\pi {0} x{1} {2} first NO TIME.csv" -f $lim_max,$x, $delta) -Force
+$FirstOnly | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -NoTypeInformation -Encoding Unicode -Path (".\pi {0} x{1} {2} first.csv"         -f $lim_max,$x, $delta) -Force
 
 # [decimal]::MaxValue / 3                               = 26409387504754779197847983445
 # [decimal]::MaxValue / 3.1415926535897910113405412673  = 25219107392466377863196895290

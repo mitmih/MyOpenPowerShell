@@ -3,7 +3,7 @@ param(
     [alias('l')][Parameter(position=0)][ValidateRange(0, 27)][uint16] $lim_min  = 1,    # нижняя граница точности, для которой нужно начать поиск дроби
     [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max  = 11,    # верхняя граница точности
     [alias('k')][Parameter(position=2)]                      [uint16] $x        = 1,    # потоков на одно ядро
-    [alias('d')][Parameter(position=3)]                      [uint16] $delta    = 24000   # сколько чисел просчитывать в одном потоке
+    [alias('d')][Parameter(position=3)]                      [uint16] $delta    = 1000   # сколько чисел просчитывать в одном потоке
 )
 
 
@@ -122,13 +122,24 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             }
         }
         
-        return $table
+        $DebugObj = New-Object psobject -Property ([ordered]@{
+            RangeStart  = $RangeStart
+            Previous    = ($i - $step)
+            Current     = $i
+            RangeEnd    = $RangeEnd
+        })
+        
+        return $table, $DebugObj
+        
+        # return $table
     }
     
     #endregion: скрипт-блок задания, выполняемого в потоке
     
     
     #region: запуск задания и добавление потоков в пул
+    
+    $end = [decimal]($RecalcTable | Where-Object {$_.acr -le $lim_min} | Select-Object -Last 1).y
     
     for ($accuracy = $lim_min; $accuracy -le $lim_max; $accuracy++)
     {
@@ -138,7 +149,7 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
         
         $WhileCount = 0
         
-        $RangeStart = [decimal]($RecalcTable | Where-Object {$_.acr -le $accuracy} | Select-Object -Last 1).y #+ 1
+        $RangeStart = $end
         
         while ($ContinueWhileCycle)
         {
@@ -156,7 +167,7 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             
             
             #region: запуск потоков
-            
+            # Set-PSBreakpoint -Variable "WhileCount" -Mode Read
             $RangeStart +=  $MTCount * $delta * $WhileCount
             
             for ($i = 0; $i -lt $MTCount; $i++)
@@ -173,7 +184,7 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 
                 $null = $NewShell.AddArgument($RangeStart + $i)  # start
                 
-                $null = $NewShell.AddArgument($RangeStart + $i + $MTCount * $delta)  # end
+                $null = $NewShell.AddArgument($RangeStart + $i + <# $MTCount * #> $delta)  # end
                 
                 $null = $NewShell.AddArgument($MTCount)  # step
                 
@@ -184,7 +195,9 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 $RunSpaces += $RunSpace
             }
             
-            "{0} .. {1}" -f ($RangeStart + $i),($RangeStart + $i + $MTCount * $delta)
+            "{0} .. {1}" -f ($RangeStart + $i),($RangeStart + $i + <# $MTCount * #> $delta) | Out-Null -Debug
+            
+            $end = ($RangeStart + $i + <# $MTCount * #> $delta) - 1
             
             #endregion: запуск потоков
             
@@ -196,9 +209,18 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             
             $doExport = $false
             
+            $dbgRanges = @()
+            
             foreach ($RS in $RunSpaces | Where-Object -FilterScript {$_.Status.IsCompleted -eq $true})  # цикл по завершённым
             {
-                $Result = $RS.Pipe.EndInvoke($RS.Status)
+                # $Result = $RS.Pipe.EndInvoke($RS.Status)
+                
+                $qwe = $RS.Pipe.EndInvoke($RS.Status)
+                
+                $Result = $qwe[0]
+                
+                $dbgRanges += $qwe[1]
+                
                 if ($Result.Count -gt 0)
                 {
                     $doExport = $true
@@ -217,14 +239,15 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 }
             }
             
+            $dbgRanges | ft *
             
             if ($doExport)
             {
                 $RecalcTable = $RecalcTable | Sort-Object -Property 'acr', 'x'
                 
-                $RecalcTable | Export-Csv -NoTypeInformation -Encoding Unicode -Path ".\pi_all_$lim_max.csv" -Force  # сохранение результатов в csv-файл
+                # $RecalcTable | Export-Csv -NoTypeInformation -Encoding Unicode -Path ".\pi_all_$lim_max.csv" -Force  # сохранение результатов в csv-файл
                 
-                $RecalcTable[-2..-1] | Format-Table -Property *
+                $RecalcTable[-2..-1] | Format-Table -Property * | Out-Null -Debug
             }
             
             #endregion: обработка завершённых потоков
@@ -251,6 +274,15 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
 #endregion Multi-Threading
 
 $RecalcTable | Format-Table -Property *
+
+$RecalcTable | Select-Object -Property 'acr','x','y','PI' | Export-Csv -NoTypeInformation -Encoding Unicode -Path (".\pi_all {0} x{1}.csv" -f $lim_max,$x) -Force  # сохранение результатов в csv-файл
+
+
+$FirstOnly = @()
+
+$RecalcTable | Group-Object -Property 'acr' | ForEach-Object {$FirstOnly += ($_ | Select-Object -ExpandProperty 'Group' | Select-Object -First 1) }
+
+$FirstOnly | Select-Object -Property 'acr','x','y','PI' | Export-Csv -NoTypeInformation -Encoding Unicode -Path (".\pi_first {0} x{1}.csv" -f $lim_max,$x) -Force
 
 # [decimal]::MaxValue / 3                               = 26409387504754779197847983445
 # [decimal]::MaxValue / 3.1415926535897910113405412673  = 25219107392466377863196895290

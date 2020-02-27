@@ -1,9 +1,16 @@
+<# https://aakinshin.net/ru/posts/cheatsheet-rounding/
+
+Math.Floor округляет вниз по направлению к отрицательной бесконечности.
+Math.Ceiling округляет вверх по направлению к положительной бесконечности.
+Math.Truncate округляет вниз или вверх по направлению к нулю.
+#>
+
 [cmdletbinding()]
 param(
-    [alias('l')][Parameter(position=0)][ValidateRange(0, 27)][uint16] $lim_min  = 7,    # нижняя граница точности, с которой нужно начать поиск дроби
-    [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max  = 11,    # верхняя граница точности
-    [alias('k')][Parameter(position=2)]                      [uint16] $x        = 1,    # потоков на одно ядро
-    [alias('d')][Parameter(position=3)]                      [uint16] $delta    = 10000   # сколько чисел просчитывать в одном потоке
+    [alias('l')][Parameter(position=0)][ValidateRange(0, 27)][uint16] $lim_min  = 1,        # нижняя граница точности, с которой нужно начать поиск дроби
+    [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max  = 11,       # верхняя граница точности
+    [alias('d')][Parameter(position=2)]                      [uint32] $delta    = 1000000,  # сколько чисел просчитывать в одном потоке
+    [alias('k')][Parameter(position=3)]                      [uint16] $x        = 1         # потоков на одно ядро
 )
 
 
@@ -72,56 +79,74 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
         
         for ($i = $RangeStart; $i -lt $RangeEnd; $i+=$step)
         {
-            $a = [System.Math]::Floor($i * $piDecimal)      # нижнее значение числителя-кандидата
+            $skipA = $false
+    
+            $Floor = [System.Math]::Floor($i * $piDecimal)      # нижнее значение числителя-кандидата
             
-            $piCalc = [string] ([decimal]$a / [decimal]$i)
+            $mult = [decimal][System.Math]::Pow(10, ($accuracy + 0) )
+            $piMult = [System.Math]::Truncate( $piDecimal * $mult )
+            $piCalcMult = [System.Math]::Truncate( [decimal]$Floor / [decimal]$i * $mult )
             
-            if (($piString[0..($accuracy + 1)] -join '') -eq ($piCalc[0..($accuracy + 1)] -join ''))
+            while ($piMult -eq $piCalcMult)
             {
+                $skipA = $true
+                
                 $table += New-Object psobject -Property ([ordered]@{
                     'acr'   = $accuracy
-                    'x'     = $a
+                    'x'     = $Floor
                     'y'     = $i
-                    'PI'    = ($piCalc[0..($accuracy + 1)] -join '') + '_<'  # ::Floor
-                    'min'   = $WatchDogTimer.Elapsed.TotalMinutes
-                    'sec'   = $WatchDogTimer.Elapsed.TotalSeconds
-                    'tic'   = $WatchDogTimer.Elapsed.Ticks
+                    'PI'    = ($piString[0..($accuracy + 1)] -join '') + '_<'  # ::Floor
+                    'min'   = $null
+                    'sec'   = $null
+                    'tic'   = $null
                 })
                 
-                break
+                $accuracy++
+                
+                $mult = [decimal][System.Math]::Pow(10, ($accuracy + 0) )
+                $piMult = [System.Math]::Truncate( $piDecimal * $mult )
+                $piCalcMult = [System.Math]::Truncate( [decimal]$Floor / [decimal]$i * $mult )
             }
             
+            if($skipA) { continue }
             
-            $b = [System.Math]::Ceiling($i * $piDecimal)    # вверхнее значение числителя-кандидата
             
-            $piCalc = [string] ([decimal]$b / [decimal]$i)
+            $Ceiling = [System.Math]::Ceiling($i * $piDecimal)    # вверхнее значение числителя-кандидата
             
-            if (($piString[0..($accuracy + 1)] -join '') -eq ($piCalc[0..($accuracy + 1)] -join ''))
+            $mult = [decimal][System.Math]::Pow(10, ($accuracy + 0) )
+            $piMult = [System.Math]::Truncate( $piDecimal * $mult )
+            $piCalcMult = [System.Math]::Truncate( [decimal]$Ceiling / [decimal]$i * $mult )
+            
+            while ($piMult -eq $piCalcMult)
             {
                 $table += New-Object psobject -Property ([ordered]@{
                     'acr'   = $accuracy
-                    'x'     = $b
+                    'x'     = $Ceiling
                     'y'     = $i
-                    'PI'    = ($piCalc[0..($accuracy + 1)] -join '') + '_>'  # ::Ceiling
-                    'min'   = $WatchDogTimer.Elapsed.TotalMinutes
-                    'sec'   = $WatchDogTimer.Elapsed.TotalSeconds
-                    'tic'   = $WatchDogTimer.Elapsed.Ticks
+                    'PI'    = ($piString[0..($accuracy + 1)] -join '') + '_>'  # ::Ceiling
+                    'min'   = $null
+                    'sec'   = $null
+                    'tic'   = $null
                 })
                 
-                break
+                $accuracy++
+                
+                $mult = [decimal][System.Math]::Pow(10, ($accuracy + 0) )
+                $piMult = [System.Math]::Truncate( $piDecimal * $mult )
+                $piCalcMult = [System.Math]::Truncate( [decimal]$Ceiling / [decimal]$i * $mult )
             }
         }
         
-        $DebugObj = New-Object psobject -Property ([ordered]@{
-            RangeStart  = $RangeStart
-            accuracy    = $accuracy
-            Current     = $i
-            RangeEnd    = $RangeEnd
-        })
+        # $DebugObj = New-Object psobject -Property ([ordered]@{
+        #     RangeStart  = $RangeStart
+        #     accuracy    = $accuracy
+        #     Current     = $i
+        #     RangeEnd    = $RangeEnd
+        # })
         
-        return $table, $DebugObj
+        # return $table, $DebugObj
         
-        # return $table
+        return $table
     }
     
     #endregion: скрипт-блок задания, выполняемого в потоке
@@ -129,13 +154,15 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
     
     #region: запуск задания и добавление потоков в пул
     
-    for ($accuracy = $lim_min; $accuracy -le $lim_max; $accuracy++)
+    $NextRangeStartInWhile = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 1)} | Select-Object -First 1).y
+    
+    for ($accuracy = $lim_min; $accuracy -lt $lim_max; $accuracy++)
     {
         $ContinueWhileCycle = $true
         
         $WhileCount = 0
         
-        $RangeStart = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($accuracy - 1)} | Select-Object -First 1).y
+        $RangeStart = $NextRangeStartInWhile
         
         while ($ContinueWhileCycle)
         {
@@ -197,17 +224,17 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             
             $doExport = $false
             
-            $dbgRanges = @()
+            ### $dbgRanges = @()
             
             foreach ($RS in $RunSpaces | Where-Object -FilterScript {$_.Status.IsCompleted -eq $true})  # цикл по завершённым
             {
-                # $Result = $RS.Pipe.EndInvoke($RS.Status)
+                $Result = $RS.Pipe.EndInvoke($RS.Status)
                 
-                $qwe = $RS.Pipe.EndInvoke($RS.Status)
+                # $qwe = $RS.Pipe.EndInvoke($RS.Status)
                 
-                $Result = $qwe[0]
+                # $Result = $qwe[0]
                 
-                $dbgRanges += $qwe[1]
+                ### $dbgRanges += $qwe[1]
                 
                 if ($Result.Count -gt 0)
                 {
@@ -229,11 +256,11 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             
             $RecalcTable[-1] | Format-Table -Property * #| Out-Null -Debug
             
-            $dbgRanges | Format-Table * -Debug
+            ### $dbgRanges | Format-Table * -Debug
             
             if ($doExport)
             {
-                $RecalcTable | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -NoTypeInformation -Encoding Unicode -Path (".\pi {0} x{1} {2} all.csv" -f $lim_max,$x, $delta) -Force  # сохранение результатов в csv-файл
+                $RecalcTable | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\pi {0} x{1} {2} all.csv" -f $lim_max,$x, $delta) -Force  # сохранение результатов в csv-файл
             }
             
             #endregion: обработка завершённых потоков
@@ -247,7 +274,7 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             
             $WhileCount = 1  # сигнал, что уже был один проход цикла while и при следующей итерации $RangeStart начнётся с последнего $RangeEnd
             
-            # $accuracy = ($RecalcTable | Select-Object -Last 1).acr
+            $accuracy = ($RecalcTable | Select-Object -Last 1).acr - 1
             
             #endregion: после завершения всех потоков закрываем пул
         }
@@ -261,15 +288,15 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
 
 $RecalcTable | Format-Table -Property *
 
-$RecalcTable | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -NoTypeInformation -Encoding Unicode -Path (".\pi {0} x{1} {2} all.csv" -f $lim_max,$x, $delta) -Force  # сохранение результатов в csv-файл
+$RecalcTable | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\pi {0} x{1} {2} all.csv" -f $lim_max,$x, $delta)  # сохранение результатов в csv-файл
 
 
 $FirstOnly = @()
 
 $RecalcTable | Group-Object -Property 'acr' | ForEach-Object {$FirstOnly += ($_ | Select-Object -ExpandProperty 'Group' | Select-Object -First 1) }
 
-$FirstOnly |    Select-Object -Property 'acr','x','y','PI' |    Export-Csv -NoTypeInformation -Encoding Unicode -Path (".\pi {0} x{1} {2} first NO TIME.csv" -f $lim_max,$x, $delta) -Force
-$FirstOnly | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -NoTypeInformation -Encoding Unicode -Path (".\pi {0} x{1} {2} first.csv"         -f $lim_max,$x, $delta) -Force
+$FirstOnly |    Select-Object -Property 'acr','x','y','PI' |    Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\pi {0} x{1} {2} first NO TIME.csv" -f $lim_max,$x, $delta)
+$FirstOnly | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\pi {0} x{1} {2} first.csv"         -f $lim_max,$x, $delta)
 
 # [decimal]::MaxValue / 3                               = 26409387504754779197847983445
 # [decimal]::MaxValue / 3.1415926535897910113405412673  = 25219107392466377863196895290

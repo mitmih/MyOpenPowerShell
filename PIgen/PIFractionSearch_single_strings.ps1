@@ -90,7 +90,7 @@ for ($accuracy = $lim_min; $accuracy -le $lim_max; $accuracy++)
                 'tic'   = $WatchDogTimer.Elapsed.Ticks
             })
             
-            $table | Export-Csv -NoTypeInformation -Encoding Unicode -Path ".\pi_all_$lim_max.csv" -Force
+            $table | Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\{0} {1} all.csv" -f (Get-Item $MyInvocation.MyCommand.Source).BaseName, $lim_max)
             
             $table[-1] | Format-Table -Property *
             
@@ -157,9 +157,6 @@ foreach ($r in $table)
 }
 
 
-# сохранение результатов в csv-файл
-# $table | Export-Csv -NoTypeInformation -Encoding Unicode -Path ".\pi_$lim_max.csv" -Force
-
 # вывод результатов на экран
 $ResultsTable[-3..-1] | Format-Table -Property *
 
@@ -221,27 +218,6 @@ TO4HOCTb  4uc/\uTE/\b   3HAMEHATE/\b PI                   minutes    seconds    
 
   17       1068966896 / 340262731    3.14159265358979323  444 min 26 628 sec  266 279 631 730
                                      3.14159265358979323
-#
+                                     #
                                      3,1415926535897932384626433832
-#
-
-18 stopped:
-
-$WatchDogTimer.elapsed, $i, ($i * $pi_decimal)
-
-
-Days              : 1
-Hours             : 13
-Minutes           : 56
-Seconds           : 54
-Milliseconds      : 284
-Ticks             : 1366142849354
-TotalDays         : 1,58118385341898
-TotalHours        : 37,9484124820556
-TotalMinutes      : 2276,90474892333
-TotalSeconds      : 136614,2849354
-TotalMilliseconds : 136614284,9354
-
-1436411651
-4512620290,3123859824087622839
 #>

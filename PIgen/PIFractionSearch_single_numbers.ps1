@@ -74,4 +74,4 @@ do
 
 } while ( ($table[-1]).acr -lt $lim_max )
 
-$table | Export-Csv -NoTypeInformation -Encoding Unicode -Force <# -Delimiter "`t" #> -Path "$env:HOMEPATH\Downloads\table.csv"
+$table | Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\{0} {1} x{2} {3} all.csv" -f (Get-Item $MyInvocation.MyCommand.Source).BaseName, $lim_max, $x, $delta)  # сохранение результатов в csv-файл

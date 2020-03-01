@@ -8,9 +8,9 @@ Math.Truncate округляет вниз или вверх по направл�
 [cmdletbinding()]
 param(
     [alias('l')][Parameter(position=0)][ValidateRange(0, 27)][uint16] $lim_min  = 1,        # нижняя граница точности, с которой нужно начать поиск дроби
-    [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max  = 11,       # верхняя граница точности
-    [alias('d')][Parameter(position=2)]                      [uint32] $delta    = 1000000,  # сколько чисел просчитывать в одном потоке
-    [alias('k')][Parameter(position=3)]                      [uint16] $x        = 1         # потоков на одно ядро
+    [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max  = 12,       # верхняя граница точности
+    [alias('k')][Parameter(position=2)]                      [uint16] $x        = 1,        # потоков на одно ядро
+    [alias('d')][Parameter(position=3)]                      [uint32] $delta    = 6000000   # сколько чисел просчитывать в одном потоке
 )
 
 
@@ -260,7 +260,7 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             
             if ($doExport)
             {
-                $RecalcTable | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\pi {0} x{1} {2} all.csv" -f $lim_max,$x, $delta) -Force  # сохранение результатов в csv-файл
+                $RecalcTable | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\{0} {1} x{2} {3} all.csv" -f (Get-Item $MyInvocation.MyCommand.Source).BaseName, $lim_max, $x, $delta)  # сохранение результатов в csv-файл
             }
             
             #endregion: обработка завершённых потоков
@@ -288,15 +288,15 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
 
 $RecalcTable | Format-Table -Property *
 
-$RecalcTable | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\pi {0} x{1} {2} all.csv" -f $lim_max,$x, $delta)  # сохранение результатов в csv-файл
+$RecalcTable | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\{0} {1} x{2} {3} all.csv" -f (Get-Item $MyInvocation.MyCommand.Source).BaseName, $lim_max, $x, $delta)  # сохранение результатов в csv-файл
 
 
 $FirstOnly = @()
 
 $RecalcTable | Group-Object -Property 'acr' | ForEach-Object {$FirstOnly += ($_ | Select-Object -ExpandProperty 'Group' | Select-Object -First 1) }
 
-$FirstOnly |    Select-Object -Property 'acr','x','y','PI' |    Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\pi {0} x{1} {2} first NO TIME.csv" -f $lim_max,$x, $delta)
-$FirstOnly | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\pi {0} x{1} {2} first.csv"         -f $lim_max,$x, $delta)
+$FirstOnly |    Select-Object -Property 'acr','x','y','PI' |    Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\{0} {1} x{2} {3} first NO TIME.csv" -f (Get-Item $MyInvocation.MyCommand.Source).BaseName, $lim_max, $x, $delta)
+$FirstOnly | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\{0} {1} x{2} {3} first.csv" -f (Get-Item $MyInvocation.MyCommand.Source).BaseName, $lim_max, $x, $delta)
 
 # [decimal]::MaxValue / 3                               = 26409387504754779197847983445
 # [decimal]::MaxValue / 3.1415926535897910113405412673  = 25219107392466377863196895290

@@ -67,27 +67,29 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
     {
         Param
         (
-            [decimal]   $piDecimal,     # 28 digit decimal precision
-            [string]    $piString,      # PI максимальной точности, 28
+            [decimal]   $piDecimal,     # π 28 знаков, в десятичном виде
+            [string]    $piString,      # π 28 знаков, в строковом виде
             [int]       $accuracy,      # искомый уровень точности (кол-во знаков после запятой)
             [decimal]   $RangeStart,    # начало диапазона
-            [decimal]   $RangeEnd,      # объём диапазона
+            [decimal]   $RangeEnd,      # конец диапазона
             [decimal]   $step           # шаг диапазона
         )
         
-        $table = @()
+        $table = @()  # результаты поиска дроби
         
         for ($i = $RangeStart; $i -lt $RangeEnd; $i+=$step)
         {
-            $skipA = $false
-    
+            $skipA = $false  # для пропуска второго цикла while (с округлением вверх) при поиске числитиля
+            
             $Floor = [System.Math]::Floor($i * $piDecimal)      # нижнее значение числителя-кандидата
             
             $mult = [decimal][System.Math]::Pow(10, ($accuracy + 0) )
+            
             $piMult = [System.Math]::Truncate( $piDecimal * $mult )
+            
             $piCalcMult = [System.Math]::Truncate( [decimal]$Floor / [decimal]$i * $mult )
             
-            while ($piMult -eq $piCalcMult)
+            while ($piMult -eq $piCalcMult)  # цикл позволяет продолжить поиск с того уровня точности, который даёт найденная дробь, если она превосходит искомый уровень точности напр. 355 / 113 даёт сразу 4й, 5й и 6й знаки и позволяет перейти к поиску дроби 7го уровня точности
             {
                 $skipA = $true
                 
@@ -104,20 +106,24 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 $accuracy++
                 
                 $mult = [decimal][System.Math]::Pow(10, ($accuracy + 0) )
+                
                 $piMult = [System.Math]::Truncate( $piDecimal * $mult )
+                
                 $piCalcMult = [System.Math]::Truncate( [decimal]$Floor / [decimal]$i * $mult )
             }
             
-            if($skipA) { continue }
+            if($skipA) { continue }  # если числитель найден в 1м расчёте, второй расчёт и цикл можно пропустить
             
             
             $Ceiling = [System.Math]::Ceiling($i * $piDecimal)    # вверхнее значение числителя-кандидата
             
             $mult = [decimal][System.Math]::Pow(10, ($accuracy + 0) )
+            
             $piMult = [System.Math]::Truncate( $piDecimal * $mult )
+            
             $piCalcMult = [System.Math]::Truncate( [decimal]$Ceiling / [decimal]$i * $mult )
             
-            while ($piMult -eq $piCalcMult)
+            while ($piMult -eq $piCalcMult)  # цикл позволяет продолжить поиск с того уровня точности, который даёт найденная дробь, если она превосходит искомый уровень точности напр. 355 / 113 даёт сразу 4й, 5й и 6й знаки и позволяет перейти к поиску дроби 7го уровня точности
             {
                 $table += New-Object psobject -Property ([ordered]@{
                     'acr'   = $accuracy
@@ -132,19 +138,12 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 $accuracy++
                 
                 $mult = [decimal][System.Math]::Pow(10, ($accuracy + 0) )
+                
                 $piMult = [System.Math]::Truncate( $piDecimal * $mult )
+                
                 $piCalcMult = [System.Math]::Truncate( [decimal]$Ceiling / [decimal]$i * $mult )
             }
         }
-        
-        # $DebugObj = New-Object psobject -Property ([ordered]@{
-        #     RangeStart  = $RangeStart
-        #     accuracy    = $accuracy
-        #     Current     = $i
-        #     RangeEnd    = $RangeEnd
-        # })
-        
-        # return $table, $DebugObj
         
         return $table
     }
@@ -154,15 +153,11 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
     
     #region: запуск задания и добавление потоков в пул
     
-    $NextRangeStartInWhile = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 1)} | Select-Object -First 1).y
+    $RangeStart = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 1)} | Select-Object -First 1).y  # $NextRangeStartInWhile = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 1)} | Select-Object -First 1).y
     
     for ($accuracy = $lim_min; $accuracy -lt $lim_max; $accuracy++)
     {
-        $ContinueWhileCycle = $true
-        
-        $WhileCount = 0
-        
-        $RangeStart = $NextRangeStartInWhile
+        $ContinueWhileCycle = $true  # $WhileCount = 0  # $RangeStart = $NextRangeStartInWhile
         
         while ($ContinueWhileCycle)
         {
@@ -181,9 +176,14 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             
             #region: запуск потоков
             
-            # $RangeStart +=  $MTCount * $delta * $WhileCount
-            
-            if ($WhileCount) { $RangeStart = $NextRangeStartInWhile }  # если этой 2й и более проход цикла - продолжим с последнего числа
+            <# потоки выполняют расчёты с чередованием, таким образом алгоритм не только не пропустит подходящей дроби в диапазоне $delta, но и максимально повысит искомый уровень точности
+            например, для 4х-ядерного CPU знаменатели будут проверяться в 4ре потока следующим образом:
+                1   5   9       ...     $delta + 1
+                 2   6   10      ...     $delta + 2
+                  3   7   11      ...     $delta + 3
+                   4   8   12      ...     $delta + 4
+            #
+            #>  # if ($WhileCount) { $RangeStart = $NextRangeStartInWhile }  # если этой 2й и более проход цикла - продолжим с последнего числа
             
             for ($i = 0; $i -lt $MTCount; $i++)
             {
@@ -199,7 +199,7 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 
                 $null = $NewShell.AddArgument($RangeStart + $i)  # start
                 
-                $null = $NewShell.AddArgument($RangeStart + $i + <# $MTCount * #> $delta)  # end
+                $null = $NewShell.AddArgument($RangeStart + $i + $delta)  # end
                 
                 $null = $NewShell.AddArgument($MTCount)  # step
                 
@@ -210,9 +210,9 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 $RunSpaces += $RunSpace
             }
             
-            "{0} .. {1}" -f ($RangeStart + $i),($RangeStart + $i + <# $MTCount * #> $delta) | Out-Null -Debug
+            "{0} .. {1}" -f ($RangeStart + $i),($RangeStart + $i + $delta) | Out-Null -Debug
             
-            $NextRangeStartInWhile = ($RangeStart + $i + <# $MTCount * #> $delta)
+            $RangeStart = ($RangeStart + $i + $delta)  # $NextRangeStartInWhile = ($RangeStart + $i + $delta)
             
             #endregion: запуск потоков
             
@@ -222,24 +222,12 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             
             #region: обработка завершённых потоков
             
-            $doExport = $false
-            
-            ### $dbgRanges = @()
-            
             foreach ($RS in $RunSpaces | Where-Object -FilterScript {$_.Status.IsCompleted -eq $true})  # цикл по завершённым
             {
                 $Result = $RS.Pipe.EndInvoke($RS.Status)
                 
-                # $qwe = $RS.Pipe.EndInvoke($RS.Status)
-                
-                # $Result = $qwe[0]
-                
-                ### $dbgRanges += $qwe[1]
-                
                 if ($Result.Count -gt 0)
                 {
-                    $doExport = $true
-                    
                     $Result | ForEach-Object {
                         $_.min = $WatchDogTimer.Elapsed.TotalMinutes
                         $_.sec = $WatchDogTimer.Elapsed.TotalSeconds
@@ -252,16 +240,15 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
                 }
             }
             
-            $RecalcTable = $RecalcTable | Sort-Object -Property 'acr', 'x'
+            
+            if (!$ContinueWhileCycle)  # промежуточный экспорт новых результатов
+            {
+                $RecalcTable = $RecalcTable | Sort-Object -Property 'acr', 'x'
+                
+                $RecalcTable | Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\{0} {1} x{2} {3} all.csv" -f (Get-Item $MyInvocation.MyCommand.Source).BaseName, $lim_max, $x, $delta)
+            }
             
             $RecalcTable[-1] | Format-Table -Property * #| Out-Null -Debug
-            
-            ### $dbgRanges | Format-Table * -Debug
-            
-            if ($doExport)
-            {
-                $RecalcTable | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\{0} {1} x{2} {3} all.csv" -f (Get-Item $MyInvocation.MyCommand.Source).BaseName, $lim_max, $x, $delta)  # сохранение результатов в csv-файл
-            }
             
             #endregion: обработка завершённых потоков
             
@@ -272,31 +259,30 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
             
             $Pool.Dispose()
             
-            $WhileCount = 1  # сигнал, что уже был один проход цикла while и при следующей итерации $RangeStart начнётся с последнего $RangeEnd
-            
             $accuracy = ($RecalcTable | Select-Object -Last 1).acr - 1
+            
+            # $WhileCount = 1  # сигнал, что уже был один проход цикла while и при следующей итерации $RangeStart начнётся с последнего $RangeEnd
             
             #endregion: после завершения всех потоков закрываем пул
         }
     }
     
     #endregion: запуск задания и добавление потоков в пул
-    
-    
 
 #endregion Multi-Threading
 
 $RecalcTable | Format-Table -Property *
 
-$RecalcTable | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\{0} {1} x{2} {3} all.csv" -f (Get-Item $MyInvocation.MyCommand.Source).BaseName, $lim_max, $x, $delta)  # сохранение результатов в csv-файл
+$RecalcTable | Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\{0} {1} x{2} {3} all.csv" -f (Get-Item $MyInvocation.MyCommand.Source).BaseName, $lim_max, $x, $delta)  # все найденные числа
 
 
 $FirstOnly = @()
 
 $RecalcTable | Group-Object -Property 'acr' | ForEach-Object {$FirstOnly += ($_ | Select-Object -ExpandProperty 'Group' | Select-Object -First 1) }
 
-$FirstOnly |    Select-Object -Property 'acr','x','y','PI' |    Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\{0} {1} x{2} {3} first NO TIME.csv" -f (Get-Item $MyInvocation.MyCommand.Source).BaseName, $lim_max, $x, $delta)
-$FirstOnly | <# Select-Object -Property 'acr','x','y','PI' | #> Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\{0} {1} x{2} {3} first.csv" -f (Get-Item $MyInvocation.MyCommand.Source).BaseName, $lim_max, $x, $delta)
+$FirstOnly | Select-Object -Property 'acr','x','y','PI' | Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\{0} {1} x{2} {3} first NO TIME.csv" -f (Get-Item $MyInvocation.MyCommand.Source).BaseName, $lim_max, $x, $delta)
+
+$FirstOnly | Export-Csv -Force -NoTypeInformation -Encoding Unicode -Path ("$env:HOMEPATH\Downloads\{0} {1} x{2} {3} first.csv" -f (Get-Item $MyInvocation.MyCommand.Source).BaseName, $lim_max, $x, $delta)  # только первые в своём уровне точности числа
 
 # [decimal]::MaxValue / 3                               = 26409387504754779197847983445
 # [decimal]::MaxValue / 3.1415926535897910113405412673  = 25219107392466377863196895290

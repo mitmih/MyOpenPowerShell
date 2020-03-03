@@ -7,8 +7,8 @@ Math.Truncate округляет вниз или вверх по направл�
 
 [cmdletbinding()]
 param(
-    [alias('l')][Parameter(position=0)][ValidateRange(0, 27)][uint16] $lim_min  = 1,        # нижняя граница точности, с которой нужно начать поиск дроби
-    [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max  = 12,       # верхняя граница точности
+    [alias('l')][Parameter(position=0)][ValidateRange(0, 27)][uint16] $lim_min  = 21,       # нижняя граница точности, с которой нужно начать поиск дроби
+    [alias('u')][Parameter(position=1)][ValidateRange(1, 28)][uint16] $lim_max  = 28,       # верхняя граница точности
     [alias('k')][Parameter(position=2)]                      [uint16] $x        = 1,        # потоков на одно ядро
     [alias('d')][Parameter(position=3)]                      [uint32] $delta    = 6000000   # сколько чисел просчитывать в одном потоке
 )
@@ -46,6 +46,7 @@ $PreCalcTable = @(
     <# 3,1415926535897932384 938750580 #> New-Object psobject -Property ([ordered] @{'acr' = 19; 'x' = 14885392687; 'y' = 4738167652})
     <# 3,14159265358979323846 23817428 #> New-Object psobject -Property ([ordered] @{'acr' = 20; 'x' = 21053343141; 'y' = 6701487259})
     <# 3,141592653589793238462 3817428 #> New-Object psobject -Property ([ordered] @{'acr' = 21; 'x' = 21053343141; 'y' = 6701487259})
+    <# 3,141592653589793238462 3817428 #> New-Object psobject -Property ([ordered] @{'acr' = 21; 'x' = 231586774551; 'y' = 73716359849})
 )
 
 $PreCalcTable | Add-Member -MemberType NoteProperty -Name 'PI' -Value $null    # значение π с заданной точностью
@@ -57,7 +58,8 @@ $PreCalcTable[0].PI = '3.'
 
 $lim_min = [System.Math]::Max(1, $lim_min)
 
-$RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
+# $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
+$RecalcTable = @($PreCalcTable | Where-Object {$_.acr -le $lim_min})
 
 
 #region Multi-Threading: распараллелим проверку доступности компа по сети
@@ -153,7 +155,8 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -lt $lim_min})
     
     #region: запуск задания и добавление потоков в пул
     
-    $RangeStart = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 1)} | Select-Object -First 1).y  # $NextRangeStartInWhile = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 1)} | Select-Object -First 1).y
+    # $RangeStart = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 1)} | Select-Object -First 1).y  # $NextRangeStartInWhile = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 1)} | Select-Object -First 1).y
+    $RangeStart = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 0)} | Select-Object -Last 1).y  # $NextRangeStartInWhile = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 1)} | Select-Object -First 1).y
     
     for ($accuracy = $lim_min; $accuracy -lt $lim_max; $accuracy++)
     {

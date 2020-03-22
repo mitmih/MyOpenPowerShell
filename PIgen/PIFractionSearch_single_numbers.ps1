@@ -1,6 +1,6 @@
 [cmdletbinding()]
 param(
-    [alias('u')][Parameter(position=0)][ValidateRange(1, 28)][uint16] $lim_max  = 11       # верхняя граница точности
+    [alias('u')][Parameter(position=0)][ValidateRange(1, 28)][uint16] $lim_max  = 28       # верхняя граница точности
 )
 
 $piString = '3.1415926535897932384626433832'
@@ -9,7 +9,6 @@ $accuracy = 0
 
 $table = @()
 
-# for ($i = 1; $i -lt 50000; $i++)
 $i = 1
 do
 {

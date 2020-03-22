@@ -46,7 +46,7 @@ $PreCalcTable = @(
     <# 3,1415926535897932384 938750580 #> New-Object psobject -Property ([ordered] @{'acr' = 19; 'x' = 14885392687; 'y' = 4738167652})
     <# 3,14159265358979323846 23817428 #> New-Object psobject -Property ([ordered] @{'acr' = 20; 'x' = 21053343141; 'y' = 6701487259})
     <# 3,141592653589793238462 3817428 #> New-Object psobject -Property ([ordered] @{'acr' = 21; 'x' = 21053343141; 'y' = 6701487259})
-    <# 3,141592653589793238462 3817428 #> New-Object psobject -Property ([ordered] @{'acr' = 21; 'x' = 231586774551; 'y' = 73716359849})
+    <# 3,141592653589793238462 3817428 #> New-Object psobject -Property ([ordered] @{'acr' = 21; 'x' = 694760323653; 'y' = 221149079547})
 )
 
 $PreCalcTable | Add-Member -MemberType NoteProperty -Name 'PI' -Value $null    # значение π с заданной точностью
@@ -156,7 +156,7 @@ $RecalcTable = @($PreCalcTable | Where-Object {$_.acr -le $lim_min})
     #region: запуск задания и добавление потоков в пул
     
     # $RangeStart = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 1)} | Select-Object -First 1).y  # $NextRangeStartInWhile = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 1)} | Select-Object -First 1).y
-    $RangeStart = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 0)} | Select-Object -Last 1).y  # $NextRangeStartInWhile = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 1)} | Select-Object -First 1).y
+    $RangeStart = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 0)} | Select-Object -Last 1).y + 1  # $NextRangeStartInWhile = [decimal]($RecalcTable | Where-Object {$_.acr -eq ($lim_min - 1)} | Select-Object -First 1).y
     
     for ($accuracy = $lim_min; $accuracy -lt $lim_max; $accuracy++)
     {

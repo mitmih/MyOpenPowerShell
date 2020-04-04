@@ -1,30 +1,31 @@
 $Timer = [system.diagnostics.stopwatch]::startNew()
 
-Add-Type -AssemblyName system.windows.forms
-
 $wshell = New-Object -ComObject WScript.Shell
 
 while ($true)
 {
+    $msg = "{0:n0}h : {1:n0}m : {2:n0}s" -f ($Timer.Elapsed.Hours, $Timer.Elapsed.Minutes, $Timer.Elapsed.Seconds)
+    
     Start-Process -FilePath "$env:windir\System32\notepad.exe"
     
     Start-Sleep -Milliseconds 999
+    
     
     $id = (Get-Process -Name 'notepad').id
     
     $null = $wshell.AppActivate($id)
     
-    # [system.windows.forms.sendkeys]::sendwait('{CAPSLOCK}')
+    $wshell.SendKeys($msg)
     
-    $msg = "{0:n0}h : {1:n0}m : {2:n0}s" -f ($Timer.Elapsed.Hours, $Timer.Elapsed.Minutes, $Timer.Elapsed.Seconds)
+    $wshell.SendKeys('{CAPSLOCK}')
     
-    [system.windows.forms.sendkeys]::sendwait($msg)
     
     Start-Sleep -Milliseconds 999
-    
-    # [system.windows.forms.sendkeys]::sendwait('{CAPSLOCK}')
     
     Get-Process -Name 'notepad' | Stop-Process -Force
     
-    Start-Sleep -Milliseconds 999
+    $wshell.SendKeys('{CAPSLOCK}')
+    
+    
+    Start-Sleep -Milliseconds 2999
 }

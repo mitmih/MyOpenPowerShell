@@ -12,6 +12,8 @@ while ($null -ne $proc)
     
     $wshell.SendKeys('{ESC}')
     
+    Start-Process -FilePath "$env:windir\System32\Mystify.scr"
+    
     Start-Sleep -Seconds 97
     
     $proc = Get-Process | Where-Object { $_.MainWindowTitle -match 'press ctrl-c' -and [int]$_.MainWindowHandle -gt 0}

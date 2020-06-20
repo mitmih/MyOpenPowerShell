@@ -104,7 +104,7 @@ function Search-Binary {
     }
     else
     {  # партнёр попался на нечестной игре :)
-        "Catched! There is no '{0}' in '{1}' list. :)" -f $target, ($lst -join ', ') | Write-Warning
+        "Catched! There is no '{0}' in '{1}' list. :)" -f $target, ($lst[0..-1] -join '..') | Write-Warning
         return $null
     }
 }

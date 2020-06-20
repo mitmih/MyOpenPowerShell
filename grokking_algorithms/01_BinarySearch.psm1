@@ -50,8 +50,6 @@ function Search-Binary {
     )
     
     
-    # if ($target -notin $lst) { return -1 }  # проверка на честность - загадывать можно только числа из списка - перенесена в конец списка
-    
     $low = 0  # нижняя граница поиска
     
     $high = $lst.Length - 1  # верхняя граница поиска
@@ -100,12 +98,12 @@ function Search-Binary {
     # и это равенство можно использовать для проверки на честность - а было ли загаданное число из списка или нет? :)
     
     if ($target -eq $lst[$high] -and $target -eq $lst[$low])
-    {  # все честно
+    {  # все честно и искомое число стало известно методом исключения
         # "step={3}, `t target={0}, `t low={1}, `t high={2}" -f $target, $lst[$low], $lst[$high], $step | Write-Warning
         return $step
     }
     else
-    {  # нечестно, партнёр пойман за руку
+    {  # партнёр попался на нечестной игре :)
         "Catched! There is no '{0}' in '{1}' list. :)" -f $target, ($lst -join ', ') | Write-Warning
         return $null
     }

@@ -50,7 +50,7 @@ function Search-Binary {
     )
     
     
-    if ($target -notin $lst) { return -1 }  # проверка на честность: загадывать можно только числа из списка
+    # if ($target -notin $lst) { return -1 }  # проверка на честность - загадывать можно только числа из списка - перенесена в конец списка
     
     $low = 0  # нижняя граница поиска
     
@@ -94,16 +94,21 @@ function Search-Binary {
     #   во-вторых, серединка находится внутри границ и указывает на одно из этих двух чисел
     #   в-третьих, на вопрос "это серединка?" был ответ "больше" (или "меньше")
     #   т.е. границы поиска изменились последний раз и стали равны, что и завершило цикл
-    # следовательно, искомое число известно без дополнительного вопроса, это не-серединка
-    # т.е. его можно назвать утвердительно, не спрашивая снова "это искомое число?"
-    # и не увеличивая этим вопросом счётчик вопросов,
-    # т.к. на нём сошлись границы поиска - искомое число = $lst[$high] = $lst[$low]
+    # следовательно, искомое число уже известно и без дополнительного вопроса - это оставшееся число "не-серединка"
+    # т.к. на нём сошлись границы поиска: $target = $lst[$high] = $lst[$low]
     # 
-    # убедимся в этом:
-    "step={3}, `t target={0}, `t low={1}, `t high={2}" -f $target, $lst[$low], $lst[$high], $step | Write-Warning
-    # 
-    # и вернём количество ЗАДАННЫХ (т.е. спрошенных у напарника) чисел :)
-    return $step
+    # и это равенство можно использовать для проверки на честность - а было ли загаданное число из списка или нет? :)
+    
+    if ($target -eq $lst[$high] -and $target -eq $lst[$low])
+    {  # все честно
+        # "step={3}, `t target={0}, `t low={1}, `t high={2}" -f $target, $lst[$low], $lst[$high], $step | Write-Warning
+        return $step
+    }
+    else
+    {  # нечестно, партнёр пойман за руку
+        "Catched! There is no '{0}' in '{1}' list. :)" -f $target, ($lst -join ', ') | Write-Warning
+        return $null
+    }
 }
 
 
@@ -176,3 +181,42 @@ function foo2 {
     return $shift
 }
 #>
+
+
+function Search-GRKBinary # by Oleg Glushko, modified to check steps count
+{ # https://github.com/egonSchiele/grokking_algorithms/pull/106/commits/1f205a4b058d9cfc329cc342ec945f18aefd7d01
+    param ($list, $item)
+
+    # $low and $high keep track of which part of the list you'll search in.
+    $low = 0;
+    $high = $list.Length - 1;
+
+    $step = 0  # modified to check steps count
+    # While you haven't narrowed it down to one element ...
+    while ($low -le $high)
+	{
+        $step++  # modified to check steps count
+        # ... check the middle element
+        $mid = [int](($low + $high) / 2);
+        $guess = $list[$mid];
+        # Found the item.
+        if ($guess -eq $item)
+        {
+            return $step;  # modified to check steps count
+        }
+        # The guess was too high.
+        if ($guess -gt $item)
+        {
+            $high = $mid - 1
+        }
+        # The guess was too low
+        else
+        {
+            $low = $mid + 1
+        }
+
+    }
+
+    # Item doesn't exist
+    return -1;
+}

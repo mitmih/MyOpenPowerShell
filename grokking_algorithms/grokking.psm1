@@ -186,7 +186,7 @@ function Search-BinarySoftRecurse  # двоичный поиск, рекурси
 }
 
 
-function SeSearch-BinaryHardRecurse  # двоичный поиск, рекурсивный алгоритм, сложная версия правил
+function Search-BinaryHardRecurse  # двоичный поиск, рекурсивный алгоритм, сложная версия правил
 {<# помогает взглянуть на алгоритм со стороны по-битного определения целевого числа по одному биту за вопрос
     и звучит так
         - задаётся вопрос "находится ли загаданное число в диапазоне 0..middle?", т.е.  0 <= Target <= middle
@@ -249,7 +249,7 @@ function SeSearch-BinaryHardRecurse  # двоичный поиск, рекурс
             
             $step++
             
-            return (SeSearch-BinaryHardRecurse $lst $target $step $l $h)
+            return (Search-BinaryHardRecurse $lst $target $step $l $h)
         }
         else { return -1 }  # нечестная игра, числа нет в списке
     }
@@ -275,7 +275,7 @@ function SeSearch-BinaryHardRecurse  # двоичный поиск, рекурс
         {
             $step++
             
-            return (SeSearch-BinaryHardRecurse $lst $target $step $l $h)
+            return (Search-BinaryHardRecurse $lst $target $step $l $h)
         }
     }
 }

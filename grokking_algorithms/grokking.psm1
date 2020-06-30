@@ -1,3 +1,4 @@
+#region Chapter 1. Introduction to Algorithms
 function Search-BinarySoftCycle  # двоичный поиск, исправленный книжный вариант (не задаётся лишний вопрос, когда остаётся одно число)
 {<# напарник загадывает любое число из известного сортированного набора чисел, например, от 0 до 7 включительно (т.е. 8-мь чисел)
     вы называете число и в ответ слышите: "угадал" / "больше" / "меньше"
@@ -279,5 +280,216 @@ function Search-BinaryHardRecurse  # двоичный поиск, рекурси
         }
     }
 }
+#endregion
 
 
+#region Chapter 2. Selection Sort
+function Find-Smallest
+{
+    [CmdletBinding()]
+    param ( [System.Collections.ArrayList]$array )
+    
+    $Smallest = $array[0]
+    
+    $SmallestIndex = 0
+    
+    for ($i = 0; $i -lt $array.Count; $i++)
+    {
+        if ($array[$i] -lt $Smallest)  # если текущее значение меньше предыдущего - запомним это значение и его индекс
+        {
+            $Smallest = $array[$i]
+            
+            $SmallestIndex = $i
+        }
+    }
+    
+    return $SmallestIndex
+}
+
+
+function SelectionSort
+{
+    [CmdletBinding()]
+    param ( [System.Collections.ArrayList]$array )
+    
+    $NewArray = @()
+    
+    while ($array.Count -gt 0)
+    {
+        $Smallest = Find-Smallest $array
+        
+        $NewArray += $array[$Smallest]
+        
+        $array.RemoveAt($Smallest)
+    }
+    
+    return $NewArray
+}
+#endregion
+
+
+#region Chapter 3. Recursion
+function Show-Countdown
+{
+    [CmdletBinding()]
+    param ( $from )
+    
+    if ($from -gt 0)
+    { # ныряем глубже в стек
+        $from | Write-Warning
+        
+        Start-Sleep -Milliseconds 999
+        
+        return Show-Countdown ($from - 1)
+    }
+    else
+    { # достигли предела
+        return 0
+    }
+}
+
+
+function Get-Factorial
+{
+    [CmdletBinding()]
+    param ( [int]$n )
+    
+    if ( $n -gt 1)
+    { # ныряем глубже в стек
+        return ( $n * ( Get-Factorial ($n - 1) ) )
+    }
+    else
+    { # достигли предела
+        return 1
+    }
+}
+
+#endregion
+
+
+#region Chapter 4. Quicksort
+function Get-ListSum
+{
+    [CmdletBinding()]
+    param ( [System.Collections.ArrayList] $array )
+    
+    if ($null -eq $array[0])  # base case: empty list
+    {
+        return $array[0]
+    }
+    else  # recurse case: not empty list
+    {
+        $a0 = $array[0]
+        
+        $array.RemoveAt(0)
+        
+        return ($a0 + (Get-ListSum $array))
+    }
+}
+
+
+function Get-ListCount
+{
+    [CmdletBinding()]
+    param ( [System.Collections.ArrayList] $array )
+    
+    if ($null -eq $array)  # base case: empty list
+    {
+        return 0
+    }
+    else  # recurse case: not empty list
+    {
+        try
+        {
+            $array.RemoveAt(0)
+            
+            return (1 + (Get-ListCount $array))
+        }
+        catch
+        {
+            return 0
+        }
+    }
+}
+
+
+function Search-BinaryHardRecurse4 {
+    [CmdletBinding()]
+    param (
+        $lst,       # отсортированный список чисел
+        $target,    # целевое число
+        $Shift = 0, # шаг (номер вопроса)
+        $l = 0,     # нижняя граница
+        $h = 0,      # верхняя граница
+        $Predict = 0
+    )
+    
+    if (0 -eq $Shift)
+    {
+        $Predict = 0
+        
+        do { $Predict++ } until ((1 -shl $Predict) -gt ($lst.Count - 1))
+        
+        $l = 0
+            
+        $h = $lst.Length - 1
+    }
+    
+    if ($l -eq $h)  # base case: edges are equal
+    {
+        if ($target -eq $lst[$l] -and $Shift -le $Predict)
+        {
+            return $Shift  #($Predict, $Shift, $lst[$l], $lst[$h])
+        }
+        else
+        {
+            return -1
+        }
+    }
+    else  # recurse case: edges are different
+    {
+        $Shift++
+        
+        $m = ($l + $h) -shr 1
+        
+        if ($target -ge $lst[$l] -and $target -le $lst[$m])
+        {
+            $h = $m  # число в диапазоне, сдвигаем верхнюю границу к середине
+        }
+        else
+        {
+            $l = $m + 1  # число в другом диапазоне, нижнюю границу ЗА середину
+        }
+        
+        return (Search-BinaryHardRecurse4 $lst $target $Shift $l $h $Predict)
+    }
+}
+#endregion
+
+
+#region Chapter 5. Hash Tables
+#endregion
+
+
+#region Chapter 6. Breadth-first Search
+#endregion
+
+
+#region Chapter 7. Dijkstra’s algorithm
+#endregion
+
+
+#region Chapter 8. Greedy algorithms
+#endregion
+
+
+#region Chapter 9. Dynamic programming
+#endregion
+
+
+#region Chapter 10. K-nearest neighbors
+#endregion
+
+
+#region Chapter 11. Where to go next
+#endregion

@@ -413,7 +413,8 @@ function Get-ListCount
 }
 
 
-function Search-BinaryHardRecurse4 {
+function Search-BinaryHardRecurse4
+{
     [CmdletBinding()]
     param (
         $lst,       # отсортированный список чисел

@@ -5,9 +5,9 @@ Import-Module -Force -Verbose ('{0}\grokking.psm1' -f $Root, ($Leaf -replace 'ps
 Clear-Host
 
 
-Get-ListSum @(0..5)
+Get-ListSum @(0..5)  # 15
 
-Get-ListCount @($null, 2)
+Get-ListCount @($null, 2)  # 2
 
 Search-BinaryHardRecurse4 @(0..7) 0  # 3: found after 3 attempts
 

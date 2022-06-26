@@ -7,6 +7,8 @@ param(
     # [Alias('c')]    [switch]    $copy        <# refresh *.ovpn files in user config dir #>
 )
 
+$ErrorActionPreference = "Stop"
+
 "{0}`n    file {1}`n    user {2}`n    pre  {3}`n    init {4}`n    suf  {5}" -f 'parameters:', $file, $user, $pre, $init, $suf | Write-Warning
 
 $ScriptName = Get-Item -Path ($MyInvocation.MyCommand.Definition)
@@ -19,7 +21,7 @@ try
     Import-Module -Force $mTOTP.FullName
 }
 
-catch   { $PSItem.ToString() | Write-Error -ErrorAction Continue }
+catch   { $PSItem.ToString() | Write-Error }
 
 finally {}
 
@@ -28,7 +30,7 @@ $OpenVPNDir = Join-Path -Path $env:USERPROFILE -ChildPath (Join-Path -Path 'Open
 
 try
 {
-    $OpenVPNDir = Get-Item -Path $OpenVPNDir -ErrorAction 'Stop'
+    $OpenVPNDir = Get-Item -Path $OpenVPNDir
 }
 catch
 {

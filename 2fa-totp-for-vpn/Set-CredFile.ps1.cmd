@@ -4,9 +4,7 @@ setlocal ENABLEDELAYEDEXPANSION
 
 @REM compute 2fa, set necessary files
     cd /D "%~dp0"
-    echo %CD%
     echo.
-    echo %0
     echo %1
     echo %2
     echo %3
@@ -21,5 +19,6 @@ setlocal ENABLEDELAYEDEXPANSION
     start "%1" /b "%ProgramFiles%\OpenVPN\bin\openvpn-gui.exe" --connect "%1.ovpn" --config_dir "%USERPROFILE%\OpenVPN\config"
     @REM --show_balloon 0
 
-@REM exit
-    timeout 3 & exit
+@REM end
+    timeout 3
+    exit

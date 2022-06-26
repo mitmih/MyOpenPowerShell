@@ -36,7 +36,7 @@ catch
 }
 finally
 {
-    Get-ChildItem -Path (Join-Path -Path $ScriptName.Directory -ChildPath 'config') | 
+    Get-ChildItem -Path (Join-Path -Path $ScriptName.Directory -ChildPath 'config') -Exclude '*.lnk' | 
         Where-Object { $_.Extension <# -match 'key|crt' #> } |
         Copy-Item -Force -Destination $OpenVPNDir
 }

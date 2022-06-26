@@ -12,7 +12,7 @@ setlocal ENABLEDELAYEDEXPANSION
     echo %5
     echo.
     
-    PowerShell -Command "Set-ExecutionPolicy 'RemoteSigned' -Scope 'CurrentUser' -Force ; Get-ExecutionPolicy ; & './Set-CredFile.ps1' -f '%1' -u '%2' -p '%3' -i '%4' -s '%5'"
+    PowerShell -Command "Set-ExecutionPolicy 'RemoteSigned' -Scope 'CurrentUser' -Force ; Get-ExecutionPolicy ; & './Set-CredFile.ps1' -f '%1' -u '%2' -p '%4' -i '%3' -s '%5'"
 
 @REM launching OpenVPN with the specified config
 

@@ -5,18 +5,18 @@ setlocal ENABLEDELAYEDEXPANSION
 @REM compute 2fa, set necessary files
     cd /D "%~dp0"
     echo.
-    echo %1
-    echo %2
-    echo %3
-    echo %4
-    echo %5
+    set "file=%1" && echo !file!
+    set "user=%2" && echo !user!
+    set "init=%3" && echo !init!
+    set  "pfx=%4" && echo !pfx!
+    set  "sfx=%5" && echo !sfx!
     echo.
     
-    PowerShell -Command "Set-ExecutionPolicy 'RemoteSigned' -Scope 'CurrentUser' -Force ; Get-ExecutionPolicy ; & './Set-CredFile.ps1' -f '%1' -u '%2' -i '%3' -p '%4' -s '%5'"
+    PowerShell -Command "Set-ExecutionPolicy 'RemoteSigned' -Scope 'CurrentUser' -Force ; Get-ExecutionPolicy ; & './Set-CredFile.ps1' -f '!file!' -u '!user!' -i '!init!' -p '!pfx!' -s '!sfx!'"
 
 @REM launching OpenVPN with the specified config
 
-    start "%1" /b "%ProgramFiles%\OpenVPN\bin\openvpn-gui.exe" --connect "%1.ovpn" --config_dir "%USERPROFILE%\OpenVPN\config"
+    start "!file!" /b "%ProgramFiles%\OpenVPN\bin\openvpn-gui.exe" --connect "!file!.ovpn" --config_dir "%USERPROFILE%\OpenVPN\config"
     @REM --show_balloon 0
 
 @REM end

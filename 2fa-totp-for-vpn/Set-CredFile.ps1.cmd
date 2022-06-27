@@ -7,7 +7,7 @@ setlocal ENABLEDELAYEDEXPANSION
     echo.
     set "file=%1" && echo !file!
     set "user=%2" && echo !user!
-    set "init=%3" && echo !init!
+    set "init=%3" && set "i=!init:~0,2!********!init:~-2!" && echo !i!
     set  "pfx=%4" && echo !pfx!
     set  "sfx=%5" && echo !sfx!
     echo.

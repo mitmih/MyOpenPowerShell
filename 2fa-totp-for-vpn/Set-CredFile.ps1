@@ -9,7 +9,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-"{0}`n    file {1}`n    user {2}`n    pre  {3}`n    init {4}`n    suf  {5}" -f 'parameters:', $file, $user, $pre, $init, $suf | Write-Warning
+"{0}`n    file {1}`n    user {2}`n    pre  {3}`n    init {4}`n    suf  {5}" -f 'parameters:', $file, $user, $pre, ('*' * $init.Length), $suf | Write-Warning
 
 $ScriptName = Get-Item -Path ($MyInvocation.MyCommand.Definition)
 

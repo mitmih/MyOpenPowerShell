@@ -11,7 +11,7 @@ $pngName = '1_razgadka.png'
 #       если в браузере картинка ОК, то конвертируем байты в биты
 $pngFile = Join-Path -Path ($PSScriptRoot) -ChildPath $pngName -Resolve
 $pngBytes = (Get-Content -Path $pngFile -AsByteStream)
-$pngBase64 = 'data:image/png;base64, {0}' -f [convert]::ToBase64String( $pngBytes )
+$pngBase64 = 'data:image/png;base64, {0}' -f [System.Convert]::ToBase64String( $pngBytes )
 $pngBase64 | Out-File -FilePath (Join-Path -Path ($PSScriptRoot) -ChildPath '2_base64.txt') -NoNewline
 $pngbits = $pngBytes | ForEach-Object { [System.Convert]::ToString($_, 2).PadLeft(8, '0') }
 $pngbits -join "`n" | Out-File -FilePath (Join-Path -Path ($PSScriptRoot) -ChildPath '2_binary.txt') -NoNewline

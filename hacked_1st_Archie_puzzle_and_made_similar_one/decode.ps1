@@ -1,4 +1,4 @@
-$MorseFile = Join-Path -Path "$env:USERPROFILE\Downloads" -ChildPath 'morse_A.txt' -Resolve | Get-Item
+$MorseFile = Join-Path -Path "$env:USERPROFILE\Downloads" -ChildPath 'morseM.txt' -Resolve | Get-Item
 
 $Morse = ($MorseFile | Get-Content) -replace '−', '-' -replace '•', '.'
 
@@ -24,3 +24,5 @@ $Morse | ForEach-Object {
 $lst[0..3],' ...', $lst[-3..-1] | Format-Table *
 
 $lst.byte | Set-Content -Force -AsByteStream -Path (Join-Path -Path "$env:USERPROFILE\Downloads" -ChildPath 'razgadka.png')
+
+$lst.char -join ''

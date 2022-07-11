@@ -1,3 +1,5 @@
+#Requires -Version 7.2  # скрипт разрабатывался и тестировался с интерпретатором "C:\Program Files\PowerShell\7\pwsh.exe"
+
 Clear-Host
 
 #   1   придумываем текст и конвертируем его в картинку на https://text2image.com/en/

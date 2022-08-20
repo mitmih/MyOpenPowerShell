@@ -91,7 +91,7 @@ $export = {
     Param($SingleObj)
     
     $SingleObj |
-    Select-Object -Property (($ext | ForEach-Object {"$_"}) + 'TODO' + 'BookSize' + 'Book' + 'BookDir') |
+    Select-Object -Property (@('Book', 'TODO', 'BookSize') + ($ext | ForEach-Object {"$_"}) + 'BookDir') |
     Sort-Object -Property 'TODO', 'BookSize', 'Book' |
     Export-Csv -Append -NoTypeInformation -Path (Join-Path -Path $me.Directory -ChildPath ('{0}.csv' -f $me.BaseName))
 }

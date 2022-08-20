@@ -104,18 +104,9 @@ Invoke-Command -ScriptBlock $export -ArgumentList $empty
 
 # выгружаем список книг в CSV, сортируя по (не)возможности их чтения на Kindle/iPad и отделяя эти группы пустыми строками
 $lst | Group-Object -Property 'TODO' | ForEach-Object {
-    # книги
     $_ | Select-Object -ExpandProperty 'Group' | ForEach-Object {
         Invoke-Command -ScriptBlock $export -ArgumentList $_
     }
     
-    # пустая строка
     Invoke-Command -ScriptBlock $export -ArgumentList $empty
 }
-
-<# # выгружаем список книг в CSV, сортируя по (не)возможности их чтения на Kindle/iPad
-$lst |
-    Select-Object -Property (($ext | ForEach-Object {"$_"}) + 'TODO' + 'BookSize' + 'Book' + 'BookDir') |
-    Sort-Object -Property 'TODO', 'BookSize', 'Book' |
-    Export-Csv -NoTypeInformation -Path (Join-Path -Path $me.Directory -ChildPath ('{0}.csv' -f $me.BaseName))
-#>

@@ -58,7 +58,7 @@ foreach ( $g in $SubDirFiles |
         $book | Add-Member -Force -MemberType 'NoteProperty' -Name $_ -Value ''
     }
     
-    # отмечаем '⬤' те расширения, что присутствуют среди файлов книги
+    # отмечаем '⬤' расширения, присутствующие среди файлов книги
     $g |
         Select-Object -ExpandProperty 'Group' |
         ForEach-Object {

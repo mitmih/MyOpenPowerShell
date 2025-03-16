@@ -12,25 +12,25 @@
             "cwd": "${cwd}"
         },
         {
-            "name": "pwsh   -scheme 'test 1.jsonc'",
+            "name": "pwsh   -scheme 'scheme test 1.jsonc'",
             "type": "PowerShell",
             "request": "launch",
             "script": "${workspaceFolder}/psDrivePartititor.ps1",
-            "args": ["-scheme 'test 1.jsonc'"]
+            "args": ["-scheme 'scheme test 1.jsonc'"]
         },
         {
-            "name": "pwsh   -scheme 'test 1.jsonc' -debugMath",
+            "name": "pwsh   -scheme 'scheme test 1.jsonc' -debugMath",
             "type": "PowerShell",
             "request": "launch",
             "script": "${workspaceFolder}/psDrivePartititor.ps1",
-            "args": ["-scheme 'test 1.jsonc'", "-debugMath"]
+            "args": ["-scheme 'scheme test 1.jsonc'", "-debugMath"]
         },
         {
-            "name": "pwsh   -scheme 'test 2 clear drive.jsonc'",
+            "name": "pwsh   -scheme 'scheme test 2 clear drive.jsonc'",
             "type": "PowerShell",
             "request": "launch",
             "script": "${workspaceFolder}/psDrivePartititor.ps1",
-            "args": ["-scheme 'test 2 clear drive.jsonc'"]
+            "args": ["-scheme 'scheme test 2 clear drive.jsonc'"]
         },
         {}
     ]
